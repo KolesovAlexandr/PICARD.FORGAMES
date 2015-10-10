@@ -154,6 +154,7 @@ public class SAMRecord implements Cloneable, Locatable, Serializable {
     protected Integer mReferenceIndex = null;
     protected Integer mMateReferenceIndex = null;
     private Integer mIndexingBin = null;
+    private boolean processed = false;
 
     /**
      * Some attributes (e.g. CIGAR) are not decoded immediately.  Use this to decide how to validate when decoded.
@@ -174,6 +175,14 @@ public class SAMRecord implements Cloneable, Locatable, Serializable {
 
     public String getReadName() {
         return mReadName;
+    }
+
+    public boolean isProcessed(){
+        return processed;
+    }
+
+    public void process(){
+        processed=true;
     }
 
     /**

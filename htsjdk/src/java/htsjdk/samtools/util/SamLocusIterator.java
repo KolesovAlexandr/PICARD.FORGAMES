@@ -71,6 +71,14 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
         public SAMRecord getRecord() { return record; }
         public byte getReadBase() { return record.getReadBases()[offset]; }
         public byte getBaseQuality() { return record.getBaseQualities()[offset]; }
+
+        public boolean isProcessed() {
+            return record.isProcessed();
+        }
+
+        public void process(){
+            record.process();
+        }
     }
 
     /**
