@@ -12,39 +12,47 @@ public class LoopArray {
     private int[] _array;
     private HashSet<String>[] _arrayHS;
 
-    public LoopArray(int length,int type) {
+    public LoopArray(int length, int type) {
         _type = type;
         _length = length;
-        _pass =new int[_length];
-        if(_type==0){
-            _array=new int[_length];
-        } else
-            _arrayHS=new HashSet[_length];
+        _pass = new int[_length];
+        if (_type == 0) {
+            _array = new int[_length];
+        } else {
+            _arrayHS = null;
+            _arrayHS = new HashSet[_length];
+        }
+
     }
 
     public void incriment(int i) {
-        if(_type==0){
+        if (_type == 0) {
             _array[getIndex(i)]++;
         }
     }
 
     public boolean add(int i, String readName) {
-        if(_type!=0){
-            return _arrayHS[getIndex(i)].add(readName);
+        int index = getIndex(i);
+        if (_type != 0) {
+            if (_arrayHS[index] == null) {
+                _arrayHS[index] = new HashSet<>();
+            }
+            return _arrayHS[index].add(readName);
         } else {
             return false;
         }
     }
 
     public int get(int i) {
-        return _array[i%_length];
+        return _array[i % _length];
     }
-    private int getIndex(int i){
-        int index = i%_length;
-        int pass = 1/_length;
-        if (_pass[index]!=pass){
-            if(_type==0){
-                _array[index]=0;
+
+    private int getIndex(int i) {
+        int index = i % _length;
+        int pass = 1 / _length;
+        if (_pass[index] != pass) {
+            if (_type == 0) {
+                _array[index] = 0;
             } else {
                 _arrayHS[index] = new HashSet<>();
             }
@@ -55,7 +63,7 @@ public class LoopArray {
 
 
     public HashSet<String> getHS(int i) {
-        return _arrayHS[(i%_length)];
+        return _arrayHS[(i % _length)];
 
     }
 }

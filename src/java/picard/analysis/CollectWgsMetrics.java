@@ -37,7 +37,7 @@ import java.util.List;
 )
 public class CollectWgsMetrics extends CommandLineProgram {
 
-    private static final int ARRAY_SIZE = 1000;
+    private static final int ARRAY_SIZE = 300;
     @Option(shortName = StandardOptionDefinitions.INPUT_SHORT_NAME, doc = "Input SAM or BAM file.")
     public File INPUT;
 
@@ -62,7 +62,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
     @Option(doc = "Determines whether to include the base quality histogram in the metrics file.")
     public boolean INCLUDE_BQ_HISTOGRAM = false;
 
-    @Option(doc="If true, count unpaired reads, and paired reads with one end unmapped")
+    @Option(doc = "If true, count unpaired reads, and paired reads with one end unmapped")
     public boolean COUNT_UNPAIRED = false;
 
     private final Log log = Log.getInstance(CollectWgsMetrics.class);
@@ -175,36 +175,33 @@ public class CollectWgsMetrics extends CommandLineProgram {
 
             public CWGSQualities(int arraySize) {
                 _length = arraySize;
-                _countBasesExcludedByBaseq= new LoopArray(_length,0);
-                _countBasesExcludedByOverlap = new LoopArray(_length,0);
-                _readNames = new LoopArray(_length,0);
+                _countBasesExcludedByBaseq = new LoopArray(_length, 0);
+                _countBasesExcludedByOverlap = new LoopArray(_length, 0);
+                _readNames = new LoopArray(_length, 1);
             }
 
             public void calculateRead(SamLocusIterator.RecordAndOffset recs, int position) {
-                if (recs.isProcessed()){
+                if (!recs.isProcessed()) {
                     String readName = recs.getRecord().getReadName();
-                    for(int i=recs.getOffset();i<recs.getRecord().getBaseQualities().length;i++){
+                    for (int i = recs.getOffset(); i < recs.getRecord().getBaseQualities().length; i++) {
                         byte quality = recs.getRecord().getBaseQualities()[i];
-                        if (quality<MINIMUM_BASE_QUALITY){
-                            _countBasesExcludedByBaseq.incriment(i-recs.getOffset()+position);
+                        if (quality < MINIMUM_BASE_QUALITY) {
+                            _countBasesExcludedByBaseq.incriment(i - recs.getOffset() + position);
                         } else {
-                            if(_readNames.add(i,readName)){
-                                _countBasesExcludedByOverlap.incriment(i-recs.getOffset()+position);
+                            if (!_readNames.add(i - recs.getOffset() + position, readName)) {
+                                _countBasesExcludedByOverlap.incriment(i - recs.getOffset() + position);
+                            } else if (_readNames.getHS(i - recs.getOffset() + position).size() <= max) {
+                                baseQHistogramArray[quality]++;
                             }
-
-                            if (_readNames.getHS(i).size()<=max){
-                                    baseQHistogramArray[quality]++;
-                            }
-
-
                         }
                     }
+                    recs.process();
 
                 }
             }
 
             public long getCountBasesExcludedByBaseq(int position) {
-                return  _countBasesExcludedByBaseq.get(position);
+                return _countBasesExcludedByBaseq.get(position);
             }
 
             public long getCountBasesExcludedByOverlap(int position) {
@@ -212,7 +209,11 @@ public class CollectWgsMetrics extends CommandLineProgram {
             }
 
             public int getReadNameSize(int position) {
-                return _readNames.getHS(position).size();
+                if (_readNames.getHS(position) != null) {
+                    return _readNames.getHS(position).size();
+                } else
+                    return 0;
+
             }
         }
 
@@ -242,8 +243,8 @@ public class CollectWgsMetrics extends CommandLineProgram {
 //                    baseQHistogramArray[recs.getRecord().getBaseQualities()[recs.getOffset()]]++;
 //                }
             }
-            basesExcludedByBaseq+=cwgs.getCountBasesExcludedByBaseq(info.getPosition());
-            basesExcludedByOverlap+=cwgs.getCountBasesExcludedByOverlap(info.getPosition());
+            basesExcludedByBaseq += cwgs.getCountBasesExcludedByBaseq(info.getPosition());
+            basesExcludedByOverlap += cwgs.getCountBasesExcludedByOverlap(info.getPosition());
 
             int readNamesSize = cwgs.getReadNameSize(info.getPosition());
             final int depth = Math.min(readNamesSize, max);
@@ -263,7 +264,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
 
         // Construct and write the outputs
         final Histogram<Integer> baseQHisto = new Histogram<Integer>("value", "baseq_count");
-        for (int i=0; i<baseQHistogramArray.length; ++i) {
+        for (int i = 0; i < baseQHistogramArray.length; ++i) {
             baseQHisto.increment(i, baseQHistogramArray[i]);
         }
 
