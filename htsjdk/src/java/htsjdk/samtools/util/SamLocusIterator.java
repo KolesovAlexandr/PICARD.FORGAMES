@@ -59,25 +59,34 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
      */
     public static class RecordAndOffset {
         private final SAMRecord record;
+        private int readLenth;
         private final int offset;
 
-        public RecordAndOffset(final SAMRecord record, final int offset) {
+        public RecordAndOffset(final SAMRecord record, final int offset, final int readLenth) {
             this.offset = offset;
             this.record = record;
+            this.readLenth = readLenth;
         }
 
         /** Zero-based offset into the read corresponding to the current position in LocusInfo */
         public int getOffset() { return offset; }
+
         public SAMRecord getRecord() { return record; }
+
         public byte getReadBase() { return record.getReadBases()[offset]; }
+
         public byte getBaseQuality() { return record.getBaseQualities()[offset]; }
 
         public boolean isProcessed() {
             return record.isProcessed();
         }
 
-        public void process(){
+        public void process() {
             record.process();
+        }
+
+        public int getReadLenth() {
+            return readLenth;
         }
     }
 
@@ -96,17 +105,22 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
         }
 
         /** Accumulate info for one read at the locus. */
-        public void add(final SAMRecord read, final int position) {
-            recordAndOffsets.add(new RecordAndOffset(read, position));
+        public void add(final SAMRecord read, final int position, final int readLenth) {
+            recordAndOffsets.add(new RecordAndOffset(read, position, readLenth));
         }
 
         public int getSequenceIndex() { return referenceSequence.getSequenceIndex(); }
 
         /** @return 1-based reference position */
         public int getPosition() { return position; }
+
         public List<RecordAndOffset> getRecordAndPositions() { return Collections.unmodifiableList(recordAndOffsets); }
+
         public String getSequenceName() { return referenceSequence.getSequenceName(); }
-        @Override public String toString() { return referenceSequence.getSequenceName() + ":" + position; }
+
+        @Override
+        public String toString() { return referenceSequence.getSequenceName() + ":" + position; }
+
         public int getSequenceLength() {return referenceSequence.getSequenceLength();}
     }
 
@@ -128,14 +142,14 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
     /**
      * LocusInfos for which accumulation is in progress.  When {@link #accumulateSamRecord(SAMRecord)} is called
      * the state of this list is guaranteed to be either:
-     *   a) Empty, or
-     *   b) That the element at index 0 corresponds to the same genomic locus as the first aligned base
-     *      in the read being accumulated
-     *
+     * a) Empty, or
+     * b) That the element at index 0 corresponds to the same genomic locus as the first aligned base
+     * in the read being accumulated
+     * <p/>
      * Before each new read is accumulated the accumulator is examined and:
-     *   i) any LocusInfos at positions earlier than the read start are moved to {@link #complete}
-     *   ii) any uncovered positions between the last LocusInfo and the first aligned base of the new read
-     *       have LocusInfos created and added to {@link #complete} if we are emitting uncovered loci
+     * i) any LocusInfos at positions earlier than the read start are moved to {@link #complete}
+     * ii) any uncovered positions between the last LocusInfo and the first aligned base of the new read
+     * have LocusInfos created and added to {@link #complete} if we are emitting uncovered loci
      */
     private final ArrayList<LocusInfo> accumulator = new ArrayList<LocusInfo>(100);
 
@@ -235,9 +249,9 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
 
     /**
      * Returns true if there are more LocusInfo objects that can be returned, due to any of the following reasons:
-     *   1) there are more aligned reads in the SAM file
-     *   2) there are LocusInfos in some stage of accumulation
-     *   3) there are loci in the target mask that have yet to be accumulated (even if there are no reads covering them)
+     * 1) there are more aligned reads in the SAM file
+     * 2) there are LocusInfos in some stage of accumulation
+     * 3) there are loci in the target mask that have yet to be accumulated (even if there are no reads covering them)
      */
     public boolean hasNext() {
         if (this.samIterator == null) {
@@ -357,12 +371,12 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
      */
     private void accumulateSamRecord(final SAMRecord rec) {
         final SAMSequenceRecord ref = getReferenceSequence(rec.getReferenceIndex());
-        final int alignmentStart  = rec.getAlignmentStart();
-        final int alignmentEnd    = rec.getAlignmentEnd();
+        final int alignmentStart = rec.getAlignmentStart();
+        final int alignmentEnd = rec.getAlignmentEnd();
         final int alignmentLength = alignmentEnd - alignmentStart;
 
         // Ensure there are LocusInfos up to and including this position
-        for (int i=accumulator.size(); i<=alignmentLength; ++i) {
+        for (int i = accumulator.size(); i <= alignmentLength; ++i) {
             accumulator.add(new LocusInfo(ref, alignmentStart + i));
         }
 
@@ -372,20 +386,21 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
 
         // interpret the CIGAR string and add the base info
         for (final AlignmentBlock alignmentBlock : rec.getAlignmentBlocks()) {
-            final int readStart   = alignmentBlock.getReadStart();
-            final int refStart    = alignmentBlock.getReferenceStart();
+            final int readStart = alignmentBlock.getReadStart();
+            final int refStart = alignmentBlock.getReferenceStart();
             final int blockLength = alignmentBlock.getLength();
 
-            for (int i=0; i<blockLength; ++i) {
+            final int readLenth = readStart + blockLength - 1;
+            for (int i = 0; i < blockLength; ++i) {
                 // 0-based offset into the read of the current base
                 final int readOffset = readStart + i - 1;
 
                 // 0-based offset from the aligned position of the first base in the read to the aligned position of the current base.
-                final int refOffset =  refStart + i - alignmentStart;
+                final int refOffset = refStart + i - alignmentStart;
 
                 // if the quality score cutoff is met, accumulate the base info
                 if (dontCheckQualities || baseQualities[readOffset] >= minQuality) {
-                    accumulator.get(refOffset).add(rec, readOffset);
+                    accumulator.get(refOffset).add(rec, readOffset, readLenth);
                 }
             }
         }
@@ -417,12 +432,10 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
                 }
                 lastReferenceSequence++;
                 lastPosition = 0;
-            }
-            else if (lastReferenceSequence < stopBeforeLocus.getSequenceIndex() || nextbit < stopBeforeLocus.getPosition()) {
+            } else if (lastReferenceSequence < stopBeforeLocus.getSequenceIndex() || nextbit < stopBeforeLocus.getPosition()) {
                 lastPosition = nextbit;
                 return new LocusInfo(getReferenceSequence(lastReferenceSequence), lastPosition);
-            }
-            else if (nextbit >= stopBeforeLocus.getPosition()) {
+            } else if (nextbit >= stopBeforeLocus.getPosition()) {
                 return null;
             }
         }
@@ -441,7 +454,7 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
         // Because of gapped alignments, it is possible to create LocusInfo's with no reads associated with them.
         // Skip over these.
         while (!accumulator.isEmpty() && accumulator.get(0).getRecordAndPositions().isEmpty() &&
-               locusComparator.compare(accumulator.get(0), stopBeforeLocus) < 0) {
+                locusComparator.compare(accumulator.get(0), stopBeforeLocus) < 0) {
             accumulator.remove(0);
         }
         if (accumulator.isEmpty()) {

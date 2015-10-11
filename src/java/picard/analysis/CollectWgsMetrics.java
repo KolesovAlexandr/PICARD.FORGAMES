@@ -37,7 +37,7 @@ import java.util.List;
 )
 public class CollectWgsMetrics extends CommandLineProgram {
 
-    private static final int ARRAY_SIZE = 300;
+    private static final int ARRAY_SIZE = 1000;
     @Option(shortName = StandardOptionDefinitions.INPUT_SHORT_NAME, doc = "Input SAM or BAM file.")
     public File INPUT;
 
@@ -169,28 +169,29 @@ public class CollectWgsMetrics extends CommandLineProgram {
         class CWGSQualities {
 
             private final int _length;
-            private final LoopArray _countBasesExcludedByBaseq;
-            private LoopArray _countBasesExcludedByOverlap;
-            private final LoopArray _readNames;
+            private final LoopArray _loopArray;
 
             public CWGSQualities(int arraySize) {
                 _length = arraySize;
-                _countBasesExcludedByBaseq = new LoopArray(_length, 0);
-                _countBasesExcludedByOverlap = new LoopArray(_length, 0);
-                _readNames = new LoopArray(_length, 1);
+                _loopArray = new LoopArray(_length);
             }
 
             public void calculateRead(SamLocusIterator.RecordAndOffset recs, int position) {
+//                TODO popravit LoopArray elementi massiva ne obnulautsa
                 if (!recs.isProcessed()) {
+
                     String readName = recs.getRecord().getReadName();
-                    for (int i = recs.getOffset(); i < recs.getRecord().getBaseQualities().length; i++) {
+//
+                   int j=recs.getReadLenth();
+                    for (int i = recs.getOffset(); i < recs.getReadLenth(); i++) {
+                        int index = _loopArray.getIndex(i - recs.getOffset() + position);
                         byte quality = recs.getRecord().getBaseQualities()[i];
                         if (quality < MINIMUM_BASE_QUALITY) {
-                            _countBasesExcludedByBaseq.incriment(i - recs.getOffset() + position);
+                            _loopArray.incrimentBaseQ(index);
                         } else {
-                            if (!_readNames.add(i - recs.getOffset() + position, readName)) {
-                                _countBasesExcludedByOverlap.incriment(i - recs.getOffset() + position);
-                            } else if (_readNames.getHS(i - recs.getOffset() + position).size() <= max) {
+                            if (!_loopArray.add(index, readName)) {
+                                _loopArray.incrimentOverlap(index);
+                            } else if (_loopArray.getReadNames(index).size() <= max) {
                                 baseQHistogramArray[quality]++;
                             }
                         }
@@ -201,19 +202,22 @@ public class CollectWgsMetrics extends CommandLineProgram {
             }
 
             public long getCountBasesExcludedByBaseq(int position) {
-                return _countBasesExcludedByBaseq.get(position);
+                return _loopArray.getBaseQ(position);
             }
 
             public long getCountBasesExcludedByOverlap(int position) {
-                return _countBasesExcludedByOverlap.get(position);
+                return _loopArray.getOverlap(position);
             }
 
             public int getReadNameSize(int position) {
-                if (_readNames.getHS(position) != null) {
-                    return _readNames.getHS(position).size();
+                if (_loopArray.getReadNames(position) != null) {
+                    return _loopArray.getReadNames(position).size();
                 } else
                     return 0;
+            }
 
+            public int getIndex(int i) {
+                return _loopArray.getIndex(i);
             }
         }
 
@@ -228,25 +232,16 @@ public class CollectWgsMetrics extends CommandLineProgram {
             final ReferenceSequence ref = refWalker.get(info.getSequenceIndex());
             final byte base = ref.getBases()[info.getPosition() - 1];
             if (base == 'N') continue;
-
             // Figure out the coverage while not counting overlapping reads twice, and excluding various things
-//            final HashSet<String> readNames = new HashSet<String>(info.getRecordAndPositions().size());
-            int pileupSize = 0;
             for (final SamLocusIterator.RecordAndOffset recs : info.getRecordAndPositions()) {
-
                 cwgs.calculateRead(recs, info.getPosition());
-
-//                if (recs.getBaseQuality() < MINIMUM_BASE_QUALITY)                   { ++basesExcludedByBaseq;   continue; }
-//                if (!readNames.add(recs.getRecord().getReadName()))                 { ++basesExcludedByOverlap; continue; }
-//                pileupSize++;
-//                if (pileupSize <= max) {
-//                    baseQHistogramArray[recs.getRecord().getBaseQualities()[recs.getOffset()]]++;
-//                }
             }
-            basesExcludedByBaseq += cwgs.getCountBasesExcludedByBaseq(info.getPosition());
-            basesExcludedByOverlap += cwgs.getCountBasesExcludedByOverlap(info.getPosition());
 
-            int readNamesSize = cwgs.getReadNameSize(info.getPosition());
+            int index = cwgs.getIndex(info.getPosition());
+            basesExcludedByBaseq += cwgs.getCountBasesExcludedByBaseq(index);
+            basesExcludedByOverlap += cwgs.getCountBasesExcludedByOverlap(index);
+
+            int readNamesSize = cwgs.getReadNameSize(index);
             final int depth = Math.min(readNamesSize, max);
             if (depth < readNamesSize) basesExcludedByCapping += readNamesSize - max;
             HistogramArray[depth]++;
@@ -281,7 +276,6 @@ public class CollectWgsMetrics extends CommandLineProgram {
         final double total = histo.getSum();
         final double totalWithExcludes = total + basesExcludedByDupes + basesExcludedByMapq + basesExcludedByPairing + basesExcludedByBaseq + basesExcludedByOverlap + basesExcludedByCapping;
         metrics.PCT_EXC_DUPE = basesExcludedByDupes / totalWithExcludes;
-        metrics.PCT_EXC_MAPQ = basesExcludedByMapq / totalWithExcludes;
         metrics.PCT_EXC_UNPAIRED = basesExcludedByPairing / totalWithExcludes;
         metrics.PCT_EXC_BASEQ = basesExcludedByBaseq / totalWithExcludes;
         metrics.PCT_EXC_OVERLAP = basesExcludedByOverlap / totalWithExcludes;

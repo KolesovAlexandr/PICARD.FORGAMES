@@ -6,64 +6,66 @@ import java.util.HashSet;
  * Created by alexandr on 10.10.15.
  */
 public class LoopArray {
-    private final int _type;
     private final int _length;
+
+    private int[] _arrayBaseq;
+    private int[] _arrayOverlap;
+    private HashSet<String>[] _readNames;
     private int[] _pass;
-    private int[] _array;
     private HashSet<String>[] _arrayHS;
 
-    public LoopArray(int length, int type) {
-        _type = type;
+    public LoopArray(int length) {
         _length = length;
+        _arrayBaseq =new int[_length];
+        _arrayOverlap = new int[_length];
+        _readNames = new HashSet[_length];
         _pass = new int[_length];
-        if (_type == 0) {
-            _array = new int[_length];
-        } else {
-            _arrayHS = null;
-            _arrayHS = new HashSet[_length];
+    }
+
+    public void incrimentBaseQ(int i) {
+        _arrayBaseq[i]++;
+    }
+
+    public void incrimentOverlap(int i) {
+        _arrayOverlap[i]++;
+    }
+
+    public boolean add(int i,String readName) {
+        if (_readNames[i]==null)
+            _readNames[i]=new HashSet<>();
+        return _readNames[i].add(readName);
+    }
+
+
+
+
+
+    public int getBaseQ(int i) {
+        return _arrayBaseq[i];
+    }
+    public int getOverlap(int i) {
+        return _arrayOverlap[i];
+    }
+    public HashSet<String> getReadNames(int i) {
+        return _readNames[i];
+    }
+
+    public int getIndex(int i) {
+        if(i==1000)
+        {
+            System.out.println();
         }
-
-    }
-
-    public void incriment(int i) {
-        if (_type == 0) {
-            _array[getIndex(i)]++;
-        }
-    }
-
-    public boolean add(int i, String readName) {
-        int index = getIndex(i);
-        if (_type != 0) {
-            if (_arrayHS[index] == null) {
-                _arrayHS[index] = new HashSet<>();
-            }
-            return _arrayHS[index].add(readName);
-        } else {
-            return false;
-        }
-    }
-
-    public int get(int i) {
-        return _array[i % _length];
-    }
-
-    private int getIndex(int i) {
         int index = i % _length;
-        int pass = 1 / _length;
-        if (_pass[index] != pass) {
-            if (_type == 0) {
-                _array[index] = 0;
-            } else {
-                _arrayHS[index] = new HashSet<>();
-            }
-
+        int pass = i / _length;
+        if(_pass[index]!= pass){
+            _arrayBaseq[index]=0;
+            _arrayOverlap[index]=0;
+            _readNames[index]=new HashSet<>();
+            _pass[index]=pass;
         }
         return index;
     }
 
 
-    public HashSet<String> getHS(int i) {
-        return _arrayHS[(i % _length)];
 
-    }
 }
