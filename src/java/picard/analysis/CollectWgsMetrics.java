@@ -166,8 +166,8 @@ public class CollectWgsMetrics extends CommandLineProgram {
         long basesExcludedByBaseq = 0;
         long basesExcludedByOverlap = 0;
         long basesExcludedByCapping = 0;
-        class CWGSQualities {
 
+        class CWGSQualities {
             private final int _length;
             private final LoopArray _loopArray;
 
@@ -177,14 +177,11 @@ public class CollectWgsMetrics extends CommandLineProgram {
             }
 
             public void calculateRead(SamLocusIterator.RecordAndOffset recs, int position) {
-//                TODO popravit LoopArray elementi massiva ne obnulautsa
                 if (!recs.isProcessed()) {
-
                     String readName = recs.getRecord().getReadName();
-//
-                   int j=recs.getReadLenth();
                     for (int i = recs.getOffset(); i < recs.getReadLenth(); i++) {
-                        int index = _loopArray.getIndex(i - recs.getOffset() + position);
+//                        int index = _loopArray.getIndex(i - recs.getOffset() + position);
+                        int index = i - recs.getOffset() + position;
                         byte quality = recs.getRecord().getBaseQualities()[i];
                         if (quality < MINIMUM_BASE_QUALITY) {
                             _loopArray.incrimentBaseQ(index);
@@ -197,7 +194,6 @@ public class CollectWgsMetrics extends CommandLineProgram {
                         }
                     }
                     recs.process();
-
                 }
             }
 
@@ -215,10 +211,9 @@ public class CollectWgsMetrics extends CommandLineProgram {
                 } else
                     return 0;
             }
-
-            public int getIndex(int i) {
-                return _loopArray.getIndex(i);
-            }
+//            public int getIndex(int i) {
+//                return _loopArray.getIndex(i);
+//            }
         }
 
 
@@ -237,7 +232,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
                 cwgs.calculateRead(recs, info.getPosition());
             }
 
-            int index = cwgs.getIndex(info.getPosition());
+            int index = info.getPosition();
             basesExcludedByBaseq += cwgs.getCountBasesExcludedByBaseq(index);
             basesExcludedByOverlap += cwgs.getCountBasesExcludedByOverlap(index);
 
