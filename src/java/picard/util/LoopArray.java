@@ -7,73 +7,63 @@ import java.util.HashSet;
  */
 public class LoopArray {
     private final int _length;
-    private int _oldShiftIndex;
 
     private int[] _arrayBaseq;
     private int _pointer;
-    private int _shiftIndex;
     private int[] _arrayOverlap;
     private HashSet<String>[] _readNames;
-//    private int[] _pass;
 
-    public LoopArray(int length) {
-        _pointer = 0;
+    public LoopArray(final int length, int pointer) {
+        _pointer = pointer;
         _length = length;
-        _shiftIndex = 0;
-        _oldShiftIndex = 0;
         _arrayBaseq = new int[_length];
         _arrayOverlap = new int[_length];
         _readNames = new HashSet[_length];
-//        _pass = new int[_length];
     }
 
     public void incrimentBaseQ(int i) {
 
-        _arrayBaseq[shiftPointer(i)]++;
+        _arrayBaseq[i]++;
+
 
     }
 
-    private int shiftPointer(int i) {
-
-        if (i == _pointer) {
-            if (++_pointer == _shiftIndex +_length) {
-                _oldShiftIndex = _shiftIndex;
-                _shiftIndex += _length;
+    public int shiftPointer(int i) {
+        int index = i % _length;
+        if (_pointer == index) {
+            _arrayBaseq[_pointer] = _arrayOverlap[_pointer] = 0;
+            _readNames[_pointer] = new HashSet<>();
+            if (++_pointer == _length) {
                 _pointer = 0;
             }
-            _arrayBaseq[i- _shiftIndex] = 0;
-        }
-        int index;
-        if (i >= _shiftIndex) {
-            index = i - _shiftIndex;
-        } else {
-            index = i - _oldShiftIndex;
         }
         return index;
     }
 
     public void incrimentOverlap(int i) {
-        _arrayOverlap[shiftPointer(i)]++;
+        _arrayOverlap[i]++;
     }
 
     public boolean add(int i, String readName) {
-        int index = shiftPointer(i);
+        int index = i;
+
         if (_readNames[index] == null)
             _readNames[index] = new HashSet<>();
         return _readNames[index].add(readName);
+//        return true;
     }
 
 
     public int getBaseQ(int i) {
-        return _arrayBaseq[shiftPointer(i)];
+        return _arrayBaseq[i];
     }
 
     public int getOverlap(int i) {
-        return _arrayOverlap[shiftPointer(i)];
+        return _arrayOverlap[i];
     }
 
     public HashSet<String> getReadNames(int i) {
-        return _readNames[shiftPointer(i)];
+        return _readNames[i];
     }
 
 //    public int getIndex(int i) {
