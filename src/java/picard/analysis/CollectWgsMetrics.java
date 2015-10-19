@@ -176,31 +176,54 @@ public class CollectWgsMetrics extends CommandLineProgram {
         class CWGSQualities {
             private final int _length;
             private final LoopArray _loopArray;
-            private HashMap<String, TreeSet<Integer>> _readNamesGlobal;
+            private HashMap<String, Integer> _readNamesGlobal;
+            private HashMap<String, Integer> _readNamesDubl;
+            private HashMap<String, TreeSet<Integer>> _readNameBaseQ;
+
 
             public CWGSQualities(int arraySize) {
                 _length = arraySize;
                 _loopArray = new LoopArray(_length, 1);
                 _readNamesGlobal = new HashMap<>();
+                _readNamesDubl = new HashMap<>();
+                _readNameBaseQ = new HashMap<>();
+
 
             }
 
             public String calculateRead(SamLocusIterator.RecordAndOffset recs, int position) {
                 String deleteRead = null;
                 String readName = recs.getRecord().getReadName();
-                TreeSet<Integer> positions = _readNamesGlobal.get(readName);
+                Integer dubl;
+//                TreeSet<Integer> positions = _readNamesGlobal.get(readName);
+                Integer pos = _readNamesGlobal.get(readName);
+                if (pos != null) {
+                    dubl = _readNamesDubl.get(readName);
+                    if (dubl != null) {
+                        dubl++;
+                    } else {
+                        Integer tmpDubl = new Integer(1);
+                        _readNamesDubl.put(readName, tmpDubl);
+                    }
+                }
                 HashSet<String> tmpReadNames = new HashSet<>();
                 if (!recs.isProcessed()) {
-                    TreeSet<Integer> tmpPositions = new TreeSet<>();
+//                    TreeSet<Integer> tmpPositions = new TreeSet<>();
                     for (int i = recs.getOffset(); i < recs.getReadLenth(); i++) {
 //                        int index = _loopArray.getIndex(i - recs.getOffset() + position);
                         int index = _loopArray.shiftPointer(i - recs.getOffset() + position);
                         byte quality = recs.getRecord().getBaseQualities()[i];
-
                         if (quality < MINIMUM_BASE_QUALITY) {
                             _loopArray.incrimentBaseQ(index);
+                            TreeSet<Integer> positions = _readNameBaseQ.get(readName);
+                            if (positions == null) {
+                                positions = new TreeSet<>();
+                                positions.add(index);
+                                _readNameBaseQ.put(readName, positions);
+                            } else
+                                positions.add(index);
                         } else {
-                            if (positions != null) {
+                            if (pos != null) {
                                 if (!positions.add(index)) {
                                     _loopArray.incrimentOverlap(index);
                                 } else {
