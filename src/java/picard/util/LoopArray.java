@@ -12,6 +12,7 @@ public class LoopArray {
     private int _pointer;
     private int[] _arrayOverlap;
     private HashSet<String>[] _readNames;
+    private int[] _readNameSize;
 
     public LoopArray(final int length, int pointer) {
         _pointer = pointer;
@@ -19,6 +20,7 @@ public class LoopArray {
         _arrayBaseq = new int[_length];
         _arrayOverlap = new int[_length];
         _readNames = new HashSet[_length];
+        _readNameSize = new int[_length];
     }
 
     public void incrimentBaseQ(int i) {
@@ -61,9 +63,16 @@ public class LoopArray {
     public int getOverlap(int i) {
         return _arrayOverlap[i];
     }
+    public int getReadNameSize(int i){
+        return _readNameSize[i];
+    }
 
     public HashSet<String> getReadNames(int i) {
         return _readNames[i];
+    }
+
+    public void incrimentreadNameSize(final int i) {
+        _readNameSize[i]++;
     }
 
 //    public int getIndex(int i) {
