@@ -15,6 +15,7 @@ import htsjdk.samtools.util.IOUtil;
 import htsjdk.samtools.util.Log;
 import htsjdk.samtools.util.ProgressLogger;
 import htsjdk.samtools.util.SamLocusIterator;
+import htsjdk.variant.variantcontext.writer.BCF2FieldEncoder;
 import picard.cmdline.CommandLineProgram;
 import picard.cmdline.CommandLineProgramProperties;
 import picard.cmdline.Option;
@@ -176,17 +177,16 @@ public class CollectWgsMetrics extends CommandLineProgram {
         class CWGSQualities {
             private final int _length;
             private final LoopArray _loopArray;
-            private HashMap<String, Integer> _readNamesGlobal;
-            private HashMap<String, Integer> _readNamesDubl;
-            private HashMap<String, TreeSet<Integer>> _readNameBaseQ;
+            private HashMap<String, Object[]> _readNames;
+//            private HashMap<String, Integer> _readNamesGlobal;
+//            private HashMap<String, Integer> _readNamesDubl;
+//            private HashMap<String, TreeSet<Integer>> _readNameBaseQ;
 
 
             public CWGSQualities(int arraySize) {
                 _length = arraySize;
                 _loopArray = new LoopArray(_length, 1);
-                _readNamesGlobal = new HashMap<>();
-                _readNamesDubl = new HashMap<>();
-                _readNameBaseQ = new HashMap<>();
+                _readNames = new HashMap<>();
 
 
             }
@@ -194,18 +194,19 @@ public class CollectWgsMetrics extends CommandLineProgram {
             public String calculateRead(SamLocusIterator.RecordAndOffset recs, int position) {
                 String deleteRead = null;
                 String readName = recs.getRecord().getReadName();
-                Integer dubl;
-//                TreeSet<Integer> positions = _readNamesGlobal.get(readName);
-                Integer pos = _readNamesGlobal.get(readName);
-                if (pos != null) {
-                    dubl = _readNamesDubl.get(readName);
-                    if (dubl != null) {
-                        dubl++;
-                    } else {
-                        Integer tmpDubl = new Integer(1);
-                        _readNamesDubl.put(readName, tmpDubl);
-                    }
+
+                Object[] infoRead = _readNames.get(readName);
+                if (infoRead == null) {
+                    infoRead = new Object[3];
+                    infoRead[0] = new Integer(recs.getReadLenth());
+                    infoRead[1] = new Integer(0);
+                    infoRead[2] = new HashSet<Integer>();
+                    _readNames.put(readName, infoRead);
+                } else {
+                    infoRead[1] = (Integer) infoRead[1] + 1;
                 }
+
+//                TreeSet<Integer> positions = _readNamesGlobal.get(readName);
                 HashSet<String> tmpReadNames = new HashSet<>();
                 if (!recs.isProcessed()) {
 //                    TreeSet<Integer> tmpPositions = new TreeSet<>();
@@ -215,6 +216,9 @@ public class CollectWgsMetrics extends CommandLineProgram {
                         byte quality = recs.getRecord().getBaseQualities()[i];
                         if (quality < MINIMUM_BASE_QUALITY) {
                             _loopArray.incrimentBaseQ(index);
+                            HashSet<Integer> positions = (HashSet<Integer>) infoRead[2];
+                            positions.add(i);
+
                             TreeSet<Integer> positions = _readNameBaseQ.get(readName);
                             if (positions == null) {
                                 positions = new TreeSet<>();
