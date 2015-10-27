@@ -59,13 +59,36 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
      */
     public static class RecordAndOffset {
         private final SAMRecord record;
-        private int readLenth;
         private final int offset;
 
-        public RecordAndOffset(final SAMRecord record, final int offset, final int readLenth) {
+        public int getLength() {
+            return length;
+        }
+
+        public int getRefStart() {
+            return refStart;
+        }
+
+        public String getReadname() {
+            return readname;
+        }
+
+        public byte[] getBaseQualities() {
+            return baseQualities;
+        }
+
+        private final int length;
+        private final int refStart;
+        private final String readname;
+        private final byte[] baseQualities;
+
+        public RecordAndOffset(final SAMRecord record, final int offset, final int length, final int refStart) {
             this.offset = offset;
             this.record = record;
-            this.readLenth = readLenth;
+            this.length = length;
+            this.refStart = refStart;
+            readname = record.getReadName();
+            baseQualities = record.getBaseQualities();
         }
 
         /** Zero-based offset into the read corresponding to the current position in LocusInfo */
@@ -76,19 +99,37 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
         public byte getReadBase() { return record.getReadBases()[offset]; }
 
         public byte getBaseQuality() { return record.getBaseQualities()[offset]; }
+    }
 
-        public boolean isProcessed() {
-            return record.isProcessed();
+    public static class RecordAndOffsetEvent {
+        private final RecordAndOffset recordAndOffset;
+
+        public enum Type {BEGIN, END}
+
+        ;
+        public Type type;
+
+        public RecordAndOffsetEvent(final RecordAndOffset recordAndOffset, Type type) {
+            this.recordAndOffset = recordAndOffset;
+            this.type = type;
         }
 
-        public void process() {
-            record.process();
+        /**
+         * Zero-based offset into the read corresonding to the current position in LocusInfo
+         */
+        public int getOffset() {
+            return recordAndOffset.getOffset();
         }
 
-        public int getReadLenth() {
-            return readLenth;
+        public RecordAndOffset getRecordAndOffsetObject() {
+            return recordAndOffset;
+        }
+
+        public Type getType() {
+            return type;
         }
     }
+
 
     /**
      * The unit of iteration.  Holds information about the locus (the SAMSequenceRecord and 1-based position
@@ -97,7 +138,9 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
     public static final class LocusInfo implements Locus {
         private final SAMSequenceRecord referenceSequence;
         private final int position;
-        private final List<RecordAndOffset> recordAndOffsets = new ArrayList<RecordAndOffset>(100);
+        private final List<RecordAndOffsetEvent> recordAndOffsets = new ArrayList<RecordAndOffsetEvent>(100);
+        private int contentSize = 0;
+
 
         LocusInfo(final SAMSequenceRecord referenceSequence, final int position) {
             this.referenceSequence = referenceSequence;
@@ -105,8 +148,9 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
         }
 
         /** Accumulate info for one read at the locus. */
-        public void add(final SAMRecord read, final int position, final int readLenth) {
-            recordAndOffsets.add(new RecordAndOffset(read, position, readLenth));
+        public void add(RecordAndOffset recordAndOffset, RecordAndOffsetEvent.Type type) {
+            recordAndOffsets.add(new RecordAndOffsetEvent(recordAndOffset, type));
+            contentSize += recordAndOffset.getLength();
         }
 
         public int getSequenceIndex() { return referenceSequence.getSequenceIndex(); }
@@ -114,7 +158,7 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
         /** @return 1-based reference position */
         public int getPosition() { return position; }
 
-        public List<RecordAndOffset> getRecordAndPositions() { return Collections.unmodifiableList(recordAndOffsets); }
+        public List<RecordAndOffsetEvent> getRecordAndPositions() { return Collections.unmodifiableList(recordAndOffsets); }
 
         public String getSequenceName() { return referenceSequence.getSequenceName(); }
 
@@ -145,7 +189,7 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
      * a) Empty, or
      * b) That the element at index 0 corresponds to the same genomic locus as the first aligned base
      * in the read being accumulated
-     * <p/>
+     * <p>
      * Before each new read is accumulated the accumulator is examined and:
      * i) any LocusInfos at positions earlier than the read start are moved to {@link #complete}
      * ii) any uncovered positions between the last LocusInfo and the first aligned base of the new read
@@ -370,39 +414,36 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
      * creating new LocusInfos as needed.
      */
     private void accumulateSamRecord(final SAMRecord rec) {
-        final SAMSequenceRecord ref = getReferenceSequence(rec.getReferenceIndex());
-        final int alignmentStart = rec.getAlignmentStart();
-        final int alignmentEnd = rec.getAlignmentEnd();
-        final int alignmentLength = alignmentEnd - alignmentStart;
-
-        // Ensure there are LocusInfos up to and including this position
-        for (int i = accumulator.size(); i <= alignmentLength; ++i) {
-            accumulator.add(new LocusInfo(ref, alignmentStart + i));
-        }
-
-        final int minQuality = getQualityScoreCutoff();
-        final boolean dontCheckQualities = minQuality == 0;
-        final byte[] baseQualities = dontCheckQualities ? null : rec.getBaseQualities();
-
         // interpret the CIGAR string and add the base info
-        for (final AlignmentBlock alignmentBlock : rec.getAlignmentBlocks()) {
-            final int readStart = alignmentBlock.getReadStart();
-            final int refStart = alignmentBlock.getReferenceStart();
-            final int blockLength = alignmentBlock.getLength();
+        for(final AlignmentBlock alignmentBlock : rec.getAlignmentBlocks()) {
+            // 0-based offset into the read of the current base
+            final int readOffset = alignmentBlock.getReadStart() - 1;
+            final int readOffsetEnd = alignmentBlock.getReadStart() - 1 +  + alignmentBlock.getLength();
+            // 1-based reference position that the current base aligns to
+            final int refPos = alignmentBlock.getReferenceStart(); //refStart
 
-            final int readLenth = readStart + blockLength - 1;
-            for (int i = 0; i < blockLength; ++i) {
-                // 0-based offset into the read of the current base
-                final int readOffset = readStart + i - 1;
+            // 0-based offset from the aligned position of the first base in the read to the aligned position
+            // of the current base.
+            final int refOffset =  refPos - rec.getAlignmentStart();
+            final int refOffsetEnd =  refPos - rec.getAlignmentStart() + alignmentBlock.getLength();
 
-                // 0-based offset from the aligned position of the first base in the read to the aligned position of the current base.
-                final int refOffset = refStart + i - alignmentStart;
-
-                // if the quality score cutoff is met, accumulate the base info
-                if (dontCheckQualities || baseQualities[readOffset] >= minQuality) {
-                    accumulator.get(refOffset).add(rec, readOffset, readLenth);
-                }
+            // Ensure there are LocusInfos up to and including this position
+            for (int j = accumulator.size(); j <= refOffsetEnd; ++j) {
+                accumulator.add(new LocusInfo(getReferenceSequence(rec.getReferenceIndex()),
+                        rec.getAlignmentStart() + j));
             }
+
+            RecordAndOffset recordAndOffset = new RecordAndOffset(rec, readOffset, alignmentBlock.getLength(), refPos);
+
+            accumulator.get(refOffset).add(recordAndOffset, RecordAndOffsetEvent.Type.BEGIN);
+            accumulator.get(refOffsetEnd).add(recordAndOffset, RecordAndOffsetEvent.Type.END);
+
+            /*
+            // if the quality score cutoff is met, accumulate the base info
+            if (rec.getBaseQualities()[readOffset] >= getQualityScoreCutoff()) {
+                accumulator.get(refOffset).add(rec, readOffset);
+            }
+            */
         }
     }
 

@@ -175,63 +175,65 @@ public class CollectWgsMetrics extends CommandLineProgram {
         class CWGSQualities {
             private final int _length;
             private final LoopArray _loopArray;
-            private HashMap<String, ParametersReads> _readNames = new HashMap<>();
-            private HashSet<String> _tmpReadName;
+            private HashMap<String, HashSet<SamLocusIterator.RecordAndOffset>> _readNames = new HashMap<>();
+            private HashSet<String> _namesWithDuplicates;
 
 
-            class ParametersReads {
-                int prev = -1;
-                int endPosition;
-//                int overlap;
-//                TreeSet<Integer> badQualityPositions = new TreeSet<>();
-
-
-            }
+//            class ParametersReads {
+//                int endPosition;
+//            }
 
 
             public CWGSQualities(int arraySize) {
                 _length = arraySize;
                 _loopArray = new LoopArray(_length, 1);
-                _tmpReadName = new HashSet<>();
+                _namesWithDuplicates = new HashSet<>();
             }
 
-            public void calculateRead(SamLocusIterator.RecordAndOffset recs, int position) {
+            public void calculateRead(SamLocusIterator.RecordAndOffsetEvent recs, int position) {
 
-//                if (position == 1150) {
-//                    System.out.println();
-//                }
-                String readName = recs.getRecord().getReadName();
-                ParametersReads parametersReads = _readNames.get(readName);
+                String readName = recs.getRecordAndOffsetObject().getReadname();
+
 
                 boolean readOverlap = false;
 
-//                if (readName.equals("H05DUALXX:7:2203:6326207:0")) {
-//                    System.out.println();
-//                }
-//                if (parametersReads == null) {
-//                    parametersReads = new ParametersReads();
-//                    parametersReads.endPosition = recs.getReadLenth();
-//                    _readNames.put(readName, parametersReads);
-//
-//                }
-//                else {
-////                    readOverlap = parametersReads.prev == position;
-//
-//                    if (parametersReads.prev == position) {
-//                        readOverlap = true;
-//                    } else if (!recs.isProcessed()) {
-//                        readOverlap = true;
-//                        if (parametersReads.endPosition < recs.getReadLenth()) {
-//                            parametersReads.endPosition = recs.getReadLenth();
-//                        }
-//                    }
-//                }
 
-                if (!recs.isProcessed() || parametersReads == null) {
-//                    if (parametersReads.prev == position) {
-//
-//                    }
-                    if (parametersReads != null) {
+                if (recs.getType() == SamLocusIterator.RecordAndOffsetEvent.Type.BEGIN) {
+                    HashSet<SamLocusIterator.RecordAndOffset> setForName = _readNames.get(readName);
+                    SamLocusIterator.RecordAndOffset recObj = recs.getRecordAndOffsetObject();
+                    byte[] qualities = recObj.getBaseQualities();
+                    int begin = recObj.getOffset();
+                    int end = begin + recObj.getLength();
+                    if (setForName != null) {
+                        readOverlap = true;
+//                        _namesWithDuplicates.add(readName);
+
+                    } else {
+                        setForName = new HashSet<>();
+                        _readNames.put(readName, setForName);
+                    }
+                    setForName.add(recObj);
+
+                    for (int i = begin; i < end; i++) {
+                        int index = _loopArray.shiftPointer(i - recs.getOffset() + position);
+                        final byte quality = qualities[i];
+                        if (quality < MINIMUM_BASE_QUALITY) {
+                            _loopArray.incrimentBaseQ(index);
+                        } else {
+                            if (readOverlap) {
+                                _loopArray.incrimentOverlap(index);
+
+                            } else {
+                                _loopArray.incrimentreadNameSize(index);
+                                if (_loopArray.getReadNameSize(index) <= max) {
+                                    baseQHistogramArray[quality]++;
+                                }
+                            }
+                        }
+                    }
+
+
+               /*     if (parametersReads != null) {
                         readOverlap = true;
                         if (parametersReads.endPosition < position + recs.getReadLenth() - recs.getOffset() - 1) {
                             parametersReads.endPosition = position + recs.getReadLenth() - recs.getOffset() - 1;
@@ -243,16 +245,13 @@ public class CollectWgsMetrics extends CommandLineProgram {
                         _readNames.put(readName, parametersReads);
 
                     }
-                    parametersReads.prev = position;
-                    for (int i = recs.getOffset(); i < recs.getReadLenth(); i++) {
-//                        int index = _loopArray.getIndex(i - recs.getOffset() + position);
+                    for (int i = recs.getOffset(); i < recs.getOffset() + recs.getReadLenth(); i++) {
                         int index = _loopArray.shiftPointer(i - recs.getOffset() + position);
                         byte quality = recs.getRecord().getBaseQualities()[i];
                         if (quality < MINIMUM_BASE_QUALITY) {
                             _loopArray.incrimentBaseQ(index);
                         } else {
-//                            if (!_loopArray.add(index, readName)) {
-                            if (readOverlap || _tmpReadName.contains(readName)) {
+                            if (readOverlap || _namesWithDuplicates.contains(readName)) {
                                 _loopArray.incrimentOverlap(index);
                             } else {
                                 _loopArray.incrimentreadNameSize(index);
@@ -262,22 +261,28 @@ public class CollectWgsMetrics extends CommandLineProgram {
                             }
                         }
                     }
-                    recs.process();
+                    recs.process();*/
                 } else {
-//                    if (parametersReads == null) {
-//                        System.out.println();
-//                    }
-                    if (parametersReads.endPosition == position) {
+                    HashSet<SamLocusIterator.RecordAndOffset> setForName = _readNames.get(readName);
+                    if (setForName.size() == 1) {
                         _readNames.remove(readName);
-                        _tmpReadName.add(readName);
+                    } else {
+                        setForName.remove(recs.getRecordAndOffsetObject());
+//                        if(setForName.size()==1){
+//                            _namesWithDuplicates.remove(readName);
+//                        }
                     }
 
 
+//                    if (parametersReads.endPosition == position) {
+//                        _readNames.remove(readName);
+//                        _namesWithDuplicates.add(readName);
+//                    }
                 }
             }
 
             public void clearTmpReadName() {
-                _tmpReadName.clear();
+                _namesWithDuplicates.clear();
             }
 
             public long getCountBasesExcludedByBaseq(int position) {
@@ -308,18 +313,16 @@ public class CollectWgsMetrics extends CommandLineProgram {
         while (iterator.hasNext()) {
             final SamLocusIterator.LocusInfo info = iterator.next();
 
+
             // Check that the reference is not N
             final ReferenceSequence ref = refWalker.get(info.getSequenceIndex());
             final byte base = ref.getBases()[info.getPosition() - 1];
             if (base == 'N') continue;
-//            if (info.getPosition()==1150){
-//                System.out.println();
-//            }
             // Figure out the coverage while not counting overlapping reads twice, and excluding various things
-            for (final SamLocusIterator.RecordAndOffset recs : info.getRecordAndPositions()) {
+            for (final SamLocusIterator.RecordAndOffsetEvent recs : info.getRecordAndPositions()) {
                 cwgs.calculateRead(recs, info.getPosition());
             }
-            cwgs.clearTmpReadName();
+//            cwgs.clearTmpReadName();
 
             int index = cwgs.getIndex(info.getPosition());
             basesExcludedByBaseq += cwgs.getCountBasesExcludedByBaseq(index);
