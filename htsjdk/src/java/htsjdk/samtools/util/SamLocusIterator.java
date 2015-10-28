@@ -65,8 +65,8 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
             return length;
         }
 
-        public int getRefStart() {
-            return refStart;
+        public int getRefPos() {
+            return refPos;
         }
 
         public String getReadname() {
@@ -78,15 +78,15 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
         }
 
         private final int length;
-        private final int refStart;
+        private final int refPos;
         private final String readname;
         private final byte[] baseQualities;
 
-        public RecordAndOffset(final SAMRecord record, final int offset, final int length, final int refStart) {
+        public RecordAndOffset(final SAMRecord record, final int offset, final int length, final int refPos) {
             this.offset = offset;
             this.record = record;
             this.length = length;
-            this.refStart = refStart;
+            this.refPos = refPos;
             readname = record.getReadName();
             baseQualities = record.getBaseQualities();
         }
@@ -96,9 +96,19 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
 
         public SAMRecord getRecord() { return record; }
 
+        public byte getBaseQuality(int position) {
+            return record.getBaseQualities()[getRelativeOffset(position)];
+        }
+
         public byte getReadBase() { return record.getReadBases()[offset]; }
 
         public byte getBaseQuality() { return record.getBaseQualities()[offset]; }
+        public int getRelativeOffset (int position) {
+            if(position - refPos + offset>149){
+                System.out.println();
+            }
+            return position - refPos + offset;
+        }
     }
 
     public static class RecordAndOffsetEvent {
@@ -106,7 +116,7 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
 
         public enum Type {BEGIN, END}
 
-        ;
+
         public Type type;
 
         public RecordAndOffsetEvent(final RecordAndOffset recordAndOffset, Type type) {
@@ -420,7 +430,7 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
             final int readOffset = alignmentBlock.getReadStart() - 1;
             final int readOffsetEnd = alignmentBlock.getReadStart() - 1 +  + alignmentBlock.getLength();
             // 1-based reference position that the current base aligns to
-            final int refPos = alignmentBlock.getReferenceStart(); //refStart
+            final int refPos = alignmentBlock.getReferenceStart();
 
             // 0-based offset from the aligned position of the first base in the read to the aligned position
             // of the current base.

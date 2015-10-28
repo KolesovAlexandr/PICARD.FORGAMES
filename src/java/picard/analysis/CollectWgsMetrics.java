@@ -212,7 +212,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
                         setForName = new HashSet<>();
                         _readNames.put(readName, setForName);
                     }
-                    setForName.add(recObj);
+
 
                     for (int i = begin; i < end; i++) {
                         int index = _loopArray.shiftPointer(i - recs.getOffset() + position);
@@ -220,7 +220,9 @@ public class CollectWgsMetrics extends CommandLineProgram {
                         if (quality < MINIMUM_BASE_QUALITY) {
                             _loopArray.incrimentBaseQ(index);
                         } else {
-                            if (readOverlap) {
+                            int bsq = excludeByQuality(setForName, position + i);
+
+                            if (readOverlap && setForName.size() - bsq > 0) {
                                 _loopArray.incrimentOverlap(index);
 
                             } else {
@@ -262,6 +264,8 @@ public class CollectWgsMetrics extends CommandLineProgram {
                         }
                     }
                     recs.process();*/
+
+                    setForName.add(recObj);
                 } else {
                     HashSet<SamLocusIterator.RecordAndOffset> setForName = _readNames.get(readName);
                     if (setForName.size() == 1) {
@@ -279,6 +283,20 @@ public class CollectWgsMetrics extends CommandLineProgram {
 //                        _namesWithDuplicates.add(readName);
 //                    }
                 }
+            }
+
+            private int excludeByQuality(final HashSet<SamLocusIterator.RecordAndOffset> setForName, int position) {
+                int bsq = 0;
+                for (SamLocusIterator.RecordAndOffset recordAndOffset : setForName) {
+//                    int j = position - recordAndOffset.getRefPos() - recordAndOffset.getOffset();
+                    if (position - recordAndOffset.getRefPos() + recordAndOffset.getOffset() < recordAndOffset.getLength()) {
+                        if (recordAndOffset.getBaseQuality(position) < MINIMUM_BASE_QUALITY) {
+                            bsq++;
+                        }
+                    } else
+                        bsq++;
+                }
+                return bsq;
             }
 
             public void clearTmpReadName() {
