@@ -220,9 +220,9 @@ public class CollectWgsMetrics extends CommandLineProgram {
                         if (quality < MINIMUM_BASE_QUALITY) {
                             _loopArray.incrimentBaseQ(index);
                         } else {
-                            int bsq = excludeByQuality(setForName, position + i);
+                            int bsq = excludeByQuality(setForName, position + i - begin, recObj);
 
-                            if (readOverlap && setForName.size() - bsq > 0) {
+                            if (setForName.size() - bsq > 0) {
                                 _loopArray.incrimentOverlap(index);
 
                             } else {
@@ -285,17 +285,21 @@ public class CollectWgsMetrics extends CommandLineProgram {
                 }
             }
 
-            private int excludeByQuality(final HashSet<SamLocusIterator.RecordAndOffset> setForName, int position) {
+            private int excludeByQuality(final HashSet<SamLocusIterator.RecordAndOffset> setForName, int position, final SamLocusIterator.RecordAndOffset recObj) {
                 int bsq = 0;
                 for (SamLocusIterator.RecordAndOffset recordAndOffset : setForName) {
 //                    int j = position - recordAndOffset.getRefPos() - recordAndOffset.getOffset();
-                    if (position - recordAndOffset.getRefPos() + recordAndOffset.getOffset() < recordAndOffset.getLength()) {
+//                    int j = recordAndOffset.getBaseQuality(position);
+//                    if (position - recordAndOffset.getRefPos() + recordAndOffset.getOffset() < recordAndOffset.getLength()) {
+                    if (position - recordAndOffset.getRefPos() < recordAndOffset.getLength()) {
+//                        if (recordAndOffset.getBaseQuality(position) < MINIMUM_BASE_QUALITY) {
                         if (recordAndOffset.getBaseQuality(position) < MINIMUM_BASE_QUALITY) {
                             bsq++;
                         }
                     } else
                         bsq++;
                 }
+
                 return bsq;
             }
 
@@ -327,12 +331,12 @@ public class CollectWgsMetrics extends CommandLineProgram {
 
         CWGSQualities cwgs = new CWGSQualities(ARRAY_SIZE);
 
-        // Loop through all the loci
+// Loop through all the loci
         while (iterator.hasNext()) {
             final SamLocusIterator.LocusInfo info = iterator.next();
 
 
-            // Check that the reference is not N
+// Check that the reference is not N
             final ReferenceSequence ref = refWalker.get(info.getSequenceIndex());
             final byte base = ref.getBases()[info.getPosition() - 1];
             if (base == 'N') continue;
@@ -356,13 +360,13 @@ public class CollectWgsMetrics extends CommandLineProgram {
             if (usingStopAfter && ++counter > stopAfter) break;
         }
 
-        // Construct and write the outputs
+// Construct and write the outputs
         final Histogram<Integer> histo = new Histogram<Integer>("coverage", "count");
         for (int i = 0; i < HistogramArray.length; ++i) {
             histo.increment(i, HistogramArray[i]);
         }
 
-        // Construct and write the outputs
+// Construct and write the outputs
         final Histogram<Integer> baseQHisto = new Histogram<Integer>("value", "baseq_count");
         for (int i = 0; i < baseQHistogramArray.length; ++i) {
             baseQHisto.increment(i, baseQHistogramArray[i]);
@@ -381,6 +385,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
         final double total = histo.getSum();
         final double totalWithExcludes = total + basesExcludedByDupes + basesExcludedByMapq + basesExcludedByPairing + basesExcludedByBaseq + basesExcludedByOverlap + basesExcludedByCapping;
         metrics.PCT_EXC_DUPE = basesExcludedByDupes / totalWithExcludes;
+        metrics.PCT_EXC_MAPQ = basesExcludedByMapq / totalWithExcludes;
         metrics.PCT_EXC_UNPAIRED = basesExcludedByPairing / totalWithExcludes;
         metrics.PCT_EXC_BASEQ = basesExcludedByBaseq / totalWithExcludes;
         metrics.PCT_EXC_OVERLAP = basesExcludedByOverlap / totalWithExcludes;

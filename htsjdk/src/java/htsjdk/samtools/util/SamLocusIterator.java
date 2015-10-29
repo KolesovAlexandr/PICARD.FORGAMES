@@ -103,11 +103,13 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
         public byte getReadBase() { return record.getReadBases()[offset]; }
 
         public byte getBaseQuality() { return record.getBaseQualities()[offset]; }
-        public int getRelativeOffset (int position) {
-            if(position - refPos + offset>149){
+
+        public int getRelativeOffset(int position) {
+            if (position - refPos + offset > 149) {
                 System.out.println();
             }
             return position - refPos + offset;
+//            return position - refPos;
         }
     }
 
@@ -425,17 +427,17 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
      */
     private void accumulateSamRecord(final SAMRecord rec) {
         // interpret the CIGAR string and add the base info
-        for(final AlignmentBlock alignmentBlock : rec.getAlignmentBlocks()) {
+        for (final AlignmentBlock alignmentBlock : rec.getAlignmentBlocks()) {
             // 0-based offset into the read of the current base
             final int readOffset = alignmentBlock.getReadStart() - 1;
-            final int readOffsetEnd = alignmentBlock.getReadStart() - 1 +  + alignmentBlock.getLength();
+            final int readOffsetEnd = alignmentBlock.getReadStart() - 1 + +alignmentBlock.getLength();
             // 1-based reference position that the current base aligns to
             final int refPos = alignmentBlock.getReferenceStart();
 
             // 0-based offset from the aligned position of the first base in the read to the aligned position
             // of the current base.
-            final int refOffset =  refPos - rec.getAlignmentStart();
-            final int refOffsetEnd =  refPos - rec.getAlignmentStart() + alignmentBlock.getLength();
+            final int refOffset = refPos - rec.getAlignmentStart();
+            final int refOffsetEnd = refPos - rec.getAlignmentStart() + alignmentBlock.getLength();
 
             // Ensure there are LocusInfos up to and including this position
             for (int j = accumulator.size(); j <= refOffsetEnd; ++j) {
