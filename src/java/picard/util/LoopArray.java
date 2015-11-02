@@ -75,6 +75,13 @@ public class LoopArray {
         _readNameSize[i]++;
     }
 
+    public void clear() {
+        _arrayBaseq = new int[_length];
+        _readNameSize = new int[_length];
+        _arrayOverlap = new int[_length];
+        _pointer = 0;
+    }
+
 //    public int getIndex(int i) {
 //        int index = i % _length;
 //        int pass = i / _length;

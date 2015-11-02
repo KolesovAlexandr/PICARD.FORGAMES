@@ -326,15 +326,31 @@ public class CollectWgsMetrics extends CommandLineProgram {
             public int getIndex(int i) {
                 return _loopArray.shiftPointer(i);
             }
+
+            public void clearArrays() {
+                _readNames.clear();
+                _loopArray.clear();
+            }
         }
 
 
         CWGSQualities cwgs = new CWGSQualities(ARRAY_SIZE);
+        int prevSequenceIndex = -1;
 
 // Loop through all the loci
         while (iterator.hasNext()) {
-            final SamLocusIterator.LocusInfo info = iterator.next();
 
+            final SamLocusIterator.LocusInfo info = iterator.next();
+            if (prevSequenceIndex != info.getSequenceIndex()) {
+                cwgs.clearArrays();
+                prevSequenceIndex = info.getSequenceIndex();
+            }
+//            if (info.getPosition() == 16500) {
+//                System.out.println();
+//            }
+//            if (info.getPosition() == 16571) {
+//                System.out.println();
+//            }
 
 // Check that the reference is not N
             final ReferenceSequence ref = refWalker.get(info.getSequenceIndex());
@@ -351,6 +367,9 @@ public class CollectWgsMetrics extends CommandLineProgram {
             basesExcludedByOverlap += cwgs.getCountBasesExcludedByOverlap(index);
 
             int readNamesSize = cwgs.getReadNameSize(index);
+//            if (info.getPosition() == 16571) {
+//                System.out.println();
+//            }
             final int depth = Math.min(readNamesSize, max);
             if (depth < readNamesSize) basesExcludedByCapping += readNamesSize - max;
             HistogramArray[depth]++;
@@ -384,6 +403,9 @@ public class CollectWgsMetrics extends CommandLineProgram {
         final long basesExcludedByPairing = getBasesExcludedBy(pairFilter);
         final double total = histo.getSum();
         final double totalWithExcludes = total + basesExcludedByDupes + basesExcludedByMapq + basesExcludedByPairing + basesExcludedByBaseq + basesExcludedByOverlap + basesExcludedByCapping;
+
+        System.out.println("total:" + total + " basesExcludedByDupes:" + " basesExcludedByDupes:" + basesExcludedByDupes + " basesExcludedByMapq:" + basesExcludedByMapq);
+        System.out.println("basesExcludedByPairing:" + basesExcludedByPairing + " basesExcludedByBaseq:" + basesExcludedByBaseq + " basesExcludedByOverlap:" + basesExcludedByOverlap + " basesExcludedByCapping:" + basesExcludedByCapping);
         metrics.PCT_EXC_DUPE = basesExcludedByDupes / totalWithExcludes;
         metrics.PCT_EXC_MAPQ = basesExcludedByMapq / totalWithExcludes;
         metrics.PCT_EXC_UNPAIRED = basesExcludedByPairing / totalWithExcludes;
