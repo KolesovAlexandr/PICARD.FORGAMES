@@ -20,16 +20,10 @@ public class LoopArray {
     }
 
     public void incrimentBaseQ(int i) {
-
         _arrayBaseq[i]++;
-
-
     }
 
     public int shiftPointer(int i) {
-//        if (i == 1150) {
-//            System.out.println();
-//        }
         int index = i % _length;
         if (_pointer == index) {
             _arrayBaseq[_pointer] = _arrayOverlap[_pointer] = 0;
@@ -45,15 +39,6 @@ public class LoopArray {
         _arrayOverlap[i]++;
     }
 
-//    public boolean add(int i, String readName) {
-//        int index = i;
-//
-//        if (_readNames[index] == null)
-//            _readNames[index] = new HashSet<>();
-//        return _readNames[index].add(readName);
-////        return true;
-//    }
-
 
     public int getBaseQ(int i) {
         return _arrayBaseq[i];
@@ -67,9 +52,6 @@ public class LoopArray {
         return _readNameSize[i];
     }
 
-//    public HashSet<String> getReadNames(int i) {
-//        return _readNames[i];
-//    }
 
     public void incrimentreadNameSize(final int i) {
         _readNameSize[i]++;
@@ -81,18 +63,5 @@ public class LoopArray {
         _arrayOverlap = new int[_length];
         _pointer = 0;
     }
-
-//    public int getIndex(int i) {
-//        int index = i % _length;
-//        int pass = i / _length;
-//        if (_pass[index] != pass) {
-//            _arrayBaseq[index] = 0;
-//            _arrayOverlap[index] = 0;
-//            _readNames[index] = new HashSet<>();
-//            _pass[index] = pass;
-//        }
-//        return index;
-//    }
-
 
 }

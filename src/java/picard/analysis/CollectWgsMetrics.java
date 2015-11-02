@@ -176,39 +176,22 @@ public class CollectWgsMetrics extends CommandLineProgram {
             private final int _length;
             private final LoopArray _loopArray;
             private HashMap<String, HashSet<SamLocusIterator.RecordAndOffset>> _readNames = new HashMap<>();
-            private HashSet<String> _namesWithDuplicates;
-
-
-//            class ParametersReads {
-//                int endPosition;
-//            }
-
 
             public CWGSQualities(int arraySize) {
                 _length = arraySize;
                 _loopArray = new LoopArray(_length, 1);
-                _namesWithDuplicates = new HashSet<>();
             }
 
             public void calculateRead(SamLocusIterator.RecordAndOffsetEvent recs, int position) {
 
                 String readName = recs.getRecordAndOffsetObject().getReadname();
-
-
-                boolean readOverlap = false;
-
-
                 if (recs.getType() == SamLocusIterator.RecordAndOffsetEvent.Type.BEGIN) {
                     HashSet<SamLocusIterator.RecordAndOffset> setForName = _readNames.get(readName);
                     SamLocusIterator.RecordAndOffset recObj = recs.getRecordAndOffsetObject();
                     byte[] qualities = recObj.getBaseQualities();
                     int begin = recObj.getOffset();
                     int end = begin + recObj.getLength();
-                    if (setForName != null) {
-                        readOverlap = true;
-//                        _namesWithDuplicates.add(readName);
-
-                    } else {
+                    if (setForName == null) {
                         setForName = new HashSet<>();
                         _readNames.put(readName, setForName);
                     }
@@ -233,38 +216,6 @@ public class CollectWgsMetrics extends CommandLineProgram {
                             }
                         }
                     }
-
-
-               /*     if (parametersReads != null) {
-                        readOverlap = true;
-                        if (parametersReads.endPosition < position + recs.getReadLenth() - recs.getOffset() - 1) {
-                            parametersReads.endPosition = position + recs.getReadLenth() - recs.getOffset() - 1;
-                        }
-
-                    } else {
-                        parametersReads = new ParametersReads();
-                        parametersReads.endPosition = position + recs.getReadLenth() - recs.getOffset() - 1;
-                        _readNames.put(readName, parametersReads);
-
-                    }
-                    for (int i = recs.getOffset(); i < recs.getOffset() + recs.getReadLenth(); i++) {
-                        int index = _loopArray.shiftPointer(i - recs.getOffset() + position);
-                        byte quality = recs.getRecord().getBaseQualities()[i];
-                        if (quality < MINIMUM_BASE_QUALITY) {
-                            _loopArray.incrimentBaseQ(index);
-                        } else {
-                            if (readOverlap || _namesWithDuplicates.contains(readName)) {
-                                _loopArray.incrimentOverlap(index);
-                            } else {
-                                _loopArray.incrimentreadNameSize(index);
-                                if (_loopArray.getReadNameSize(index) <= max) {
-                                    baseQHistogramArray[quality]++;
-                                }
-                            }
-                        }
-                    }
-                    recs.process();*/
-
                     setForName.add(recObj);
                 } else {
                     HashSet<SamLocusIterator.RecordAndOffset> setForName = _readNames.get(readName);
@@ -272,40 +223,23 @@ public class CollectWgsMetrics extends CommandLineProgram {
                         _readNames.remove(readName);
                     } else {
                         setForName.remove(recs.getRecordAndOffsetObject());
-//                        if(setForName.size()==1){
-//                            _namesWithDuplicates.remove(readName);
-//                        }
                     }
-
-
-//                    if (parametersReads.endPosition == position) {
-//                        _readNames.remove(readName);
-//                        _namesWithDuplicates.add(readName);
-//                    }
                 }
             }
 
             private int excludeByQuality(final HashSet<SamLocusIterator.RecordAndOffset> setForName, int position, final SamLocusIterator.RecordAndOffset recObj) {
                 int bsq = 0;
                 for (SamLocusIterator.RecordAndOffset recordAndOffset : setForName) {
-//                    int j = position - recordAndOffset.getRefPos() - recordAndOffset.getOffset();
-//                    int j = recordAndOffset.getBaseQuality(position);
-//                    if (position - recordAndOffset.getRefPos() + recordAndOffset.getOffset() < recordAndOffset.getLength()) {
                     if (position - recordAndOffset.getRefPos() < recordAndOffset.getLength()) {
-//                        if (recordAndOffset.getBaseQuality(position) < MINIMUM_BASE_QUALITY) {
                         if (recordAndOffset.getBaseQuality(position) < MINIMUM_BASE_QUALITY) {
                             bsq++;
                         }
                     } else
                         bsq++;
                 }
-
                 return bsq;
             }
 
-            public void clearTmpReadName() {
-                _namesWithDuplicates.clear();
-            }
 
             public long getCountBasesExcludedByBaseq(int position) {
                 return _loopArray.getBaseQ(position);
@@ -316,10 +250,6 @@ public class CollectWgsMetrics extends CommandLineProgram {
             }
 
             public int getReadNameSize(int position) {
-//                if (_loopArray.getReadNames(position) != null) {
-//                    return _loopArray.getReadNames(position).size();
-//                } else
-//                    return 0;
                 return _loopArray.getReadNameSize(position);
             }
 
@@ -337,7 +267,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
         CWGSQualities cwgs = new CWGSQualities(ARRAY_SIZE);
         int prevSequenceIndex = -1;
 
-// Loop through all the loci
+        // Loop through all the loci
         while (iterator.hasNext()) {
 
             final SamLocusIterator.LocusInfo info = iterator.next();
@@ -345,14 +275,8 @@ public class CollectWgsMetrics extends CommandLineProgram {
                 cwgs.clearArrays();
                 prevSequenceIndex = info.getSequenceIndex();
             }
-//            if (info.getPosition() == 16500) {
-//                System.out.println();
-//            }
-//            if (info.getPosition() == 16571) {
-//                System.out.println();
-//            }
 
-// Check that the reference is not N
+            // Check that the reference is not N
             final ReferenceSequence ref = refWalker.get(info.getSequenceIndex());
             final byte base = ref.getBases()[info.getPosition() - 1];
             if (base == 'N') continue;
@@ -360,16 +284,12 @@ public class CollectWgsMetrics extends CommandLineProgram {
             for (final SamLocusIterator.RecordAndOffsetEvent recs : info.getRecordAndPositions()) {
                 cwgs.calculateRead(recs, info.getPosition());
             }
-//            cwgs.clearTmpReadName();
 
             int index = cwgs.getIndex(info.getPosition());
             basesExcludedByBaseq += cwgs.getCountBasesExcludedByBaseq(index);
             basesExcludedByOverlap += cwgs.getCountBasesExcludedByOverlap(index);
 
             int readNamesSize = cwgs.getReadNameSize(index);
-//            if (info.getPosition() == 16571) {
-//                System.out.println();
-//            }
             final int depth = Math.min(readNamesSize, max);
             if (depth < readNamesSize) basesExcludedByCapping += readNamesSize - max;
             HistogramArray[depth]++;
@@ -379,13 +299,13 @@ public class CollectWgsMetrics extends CommandLineProgram {
             if (usingStopAfter && ++counter > stopAfter) break;
         }
 
-// Construct and write the outputs
+        // Construct and write the outputs
         final Histogram<Integer> histo = new Histogram<Integer>("coverage", "count");
         for (int i = 0; i < HistogramArray.length; ++i) {
             histo.increment(i, HistogramArray[i]);
         }
 
-// Construct and write the outputs
+        // Construct and write the outputs
         final Histogram<Integer> baseQHisto = new Histogram<Integer>("value", "baseq_count");
         for (int i = 0; i < baseQHistogramArray.length; ++i) {
             baseQHisto.increment(i, baseQHistogramArray[i]);
@@ -507,4 +427,3 @@ class CountingPairedFilter extends CountingFilter {
     @Override
     public boolean reallyFilterOut(final SAMRecord record) { return !record.getReadPairedFlag() || record.getMateUnmappedFlag(); }
 }
-
