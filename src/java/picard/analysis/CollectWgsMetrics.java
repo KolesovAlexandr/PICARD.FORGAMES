@@ -228,6 +228,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
 
         }
         batcher.flush();
+
         service.shutdown();
         try {
             service.awaitTermination(1, TimeUnit.DAYS);
