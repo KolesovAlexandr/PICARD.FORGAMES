@@ -78,8 +78,8 @@ public class CollectWgsMetrics extends CommandLineProgram {
     public boolean COUNT_UNPAIRED = false;
 
     private final Log log = Log.getInstance(CollectWgsMetrics.class);
-    private static final int ARRAY_SIZE = 3000;
-    private static final int INFOS_PACK_SIZE = 3000;
+    private static final int ARRAY_SIZE = 1000;
+    private static final int INFOS_PACK_SIZE = 1000;
     final int max = COVERAGE_CAP;
     int prevSequenceIndex = -1;
     long basesExcludedByBaseq = 0;
@@ -160,7 +160,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
         // Setup all the inputs
         final ProgressLogger progress = new ProgressLogger(log, 10000000, "Processed", "loci");
         final ReferenceSequenceFileWalker refWalker = new ReferenceSequenceFileWalker(REFERENCE_SEQUENCE);
-        final SamReader in = SamReaderFactory.makeDefault().referenceSequence(REFERENCE_SEQUENCE).open(INPUT);
+        final SamReader in = SamReaderFactory.makeDefault().referenceSequence(REFERENCE_SEQUENCE).async(true).open(INPUT);
         final SamLocusIterator iterator = getLocusIterator(in);
 
         final List<SamRecordFilter> filters = new ArrayList<SamRecordFilter>();
