@@ -78,8 +78,8 @@ public class CollectWgsMetrics extends CommandLineProgram {
     public boolean COUNT_UNPAIRED = false;
 
     private final Log log = Log.getInstance(CollectWgsMetrics.class);
-    private static final int ARRAY_SIZE = 1000;
-    private static final int INFOS_PACK_SIZE = 1000;
+    private static final int ARRAY_SIZE = 3000;
+    private static final int INFOS_PACK_SIZE = 3000;
     final int max = COVERAGE_CAP;
     int prevSequenceIndex = -1;
     long basesExcludedByBaseq = 0;
@@ -88,7 +88,6 @@ public class CollectWgsMetrics extends CommandLineProgram {
     final long[] baseQHistogramArray = new long[Byte.MAX_VALUE];
     final long[] HistogramArray = new long[max + 1];
     CWGSQualities cwgs = new CWGSQualities(ARRAY_SIZE);
-
 
 
     /** Metrics for evaluating the performance of whole genome sequencing experiments. */
@@ -184,7 +183,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
         final boolean usingStopAfter = STOP_AFTER > 0;
         final long stopAfter = STOP_AFTER - 1;
         long counter = 0;
-        final  ExecutorService service = new ThreadPoolExecutor(1,1,0L,TimeUnit.MILLISECONDS,new LinkedBlockingQueue<Runnable>(2){
+        final ExecutorService service = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(2) {
             @Override
             public boolean offer(final Runnable e) {
                 try {
@@ -196,14 +195,12 @@ public class CollectWgsMetrics extends CommandLineProgram {
             }
         });
 
-       BatchBuffer<SamLocusIterator.LocusInfo> batcher = new BatchBuffer<>(INFOS_PACK_SIZE, new BatchConsumer<SamLocusIterator.LocusInfo>() {
-           @Override
-           public void consume(final Collection<SamLocusIterator.LocusInfo> batch) {
-               service.execute(new MyRunnable(batch,cwgs,max));
-           }
-       });
-
-
+        BatchBuffer<InfoAndRefBases> batcher = new BatchBuffer<InfoAndRefBases>(INFOS_PACK_SIZE, new BatchConsumer<InfoAndRefBases>() {
+            @Override
+            public void consume(final Collection<InfoAndRefBases> batch) {
+                service.execute(new MyRunnable(batch, cwgs, max));
+            }
+        });
 
 
 
@@ -214,16 +211,20 @@ public class CollectWgsMetrics extends CommandLineProgram {
 
             // Check that the reference is not N
             final ReferenceSequence ref = refWalker.get(info.getSequenceIndex());
-            final byte base = ref.getBases()[info.getPosition() - 1];
+            final byte[] bases = ref.getBases();
+//            final byte base = ref.getBases()[info.getPosition() - 1];
+//            if (base == 'N') continue;
+//            final boolean notN = base != 'N';
+            final InfoAndRefBases infoAndRefBases = new InfoAndRefBases(info, bases);
+            batcher.add(infoAndRefBases);
+
+            final byte base = bases[info.getPosition() - 1];
+
             if (base == 'N') continue;
 
             // Record progress and perhaps stop
             progress.record(info.getSequenceName(), info.getPosition());
             if (usingStopAfter && ++counter > stopAfter) break;
-
-            batcher.add(info);
-
-
 
 
         }
@@ -236,15 +237,13 @@ public class CollectWgsMetrics extends CommandLineProgram {
             e.printStackTrace();
         }
 
-        while(!service.isTerminated()){
+        while (!service.isTerminated()) {
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-
-
 
 
         // Construct and write the outputs
@@ -315,7 +314,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
             _loopArray = new LoopArray(_length, 1);
         }
 
-        public void calculateRead(SamLocusIterator.RecordAndOffsetEvent recs, int position) {
+        public void calculateRead(SamLocusIterator.RecordAndOffsetEvent recs, int position, final byte[] bases) {
 
             String readName = recs.getRecordAndOffsetObject().getReadname();
             if (recs.getType() == SamLocusIterator.RecordAndOffsetEvent.Type.BEGIN) {
@@ -329,6 +328,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
                     _readNames.put(readName, setForName);
                 }
                 for (int i = begin; i < end; i++) {
+                    if (bases[i - begin + position - 1] == 'N') continue;
                     int index = _loopArray.shiftPointer(i - recs.getOffset() + position);
                     final byte quality = qualities[i];
                     if (quality < MINIMUM_BASE_QUALITY) {
@@ -395,20 +395,22 @@ public class CollectWgsMetrics extends CommandLineProgram {
     }
 
     private class MyRunnable implements Runnable {
-        private final Collection<SamLocusIterator.LocusInfo> info_list;
+        private final Collection<InfoAndRefBases> infoAndRefBaseNotNs_list;
 
         private final CWGSQualities cwgs;
         private final int max;
 
-        public MyRunnable(Collection<SamLocusIterator.LocusInfo> info_list, final CWGSQualities cwgs, final int max) {
-            this.info_list = info_list;
+        public MyRunnable(Collection<InfoAndRefBases> infoAndRefBases_list, final CWGSQualities cwgs, final int max) {
+            this.infoAndRefBaseNotNs_list = infoAndRefBases_list;
             this.cwgs = cwgs;
             this.max = max;
         }
 
         @Override
         public void run() {
-            for (SamLocusIterator.LocusInfo info : info_list) {
+            for (InfoAndRefBases infoAndRefBases : infoAndRefBaseNotNs_list) {
+                SamLocusIterator.LocusInfo info = infoAndRefBases.getInfo();
+                byte[] bases = infoAndRefBases.getBases();
                 if (prevSequenceIndex != info.getSequenceIndex()) {
                     cwgs.clearArrays();
                     prevSequenceIndex = info.getSequenceIndex();
@@ -416,8 +418,9 @@ public class CollectWgsMetrics extends CommandLineProgram {
 
                 // Figure out the coverage while not counting overlapping reads twice, and excluding various things
                 for (final SamLocusIterator.RecordAndOffsetEvent recs : info.getRecordAndPositions()) {
-                    cwgs.calculateRead(recs, info.getPosition());
+                    cwgs.calculateRead(recs, info.getPosition(), bases);
                 }
+//                if (!infoAndRefBases.isNotN()) continue;
 
                 int index = cwgs.getIndex(info.getPosition());
                 basesExcludedByBaseq += cwgs.getCountBasesExcludedByBaseq(index);
@@ -443,6 +446,29 @@ public class CollectWgsMetrics extends CommandLineProgram {
         return new SamLocusIterator(in);
     }
 
+    private class InfoAndRefBases {
+        private SamLocusIterator.LocusInfo info;
+//        private boolean notN;
+        private byte[] bases;
+
+        InfoAndRefBases(SamLocusIterator.LocusInfo info, final byte[] bases) {
+            this.info = info;
+//            this.notN = notN;
+            this.bases = bases;
+        }
+
+        public SamLocusIterator.LocusInfo getInfo() {
+            return info;
+        }
+
+//        public boolean isNotN() {
+//            return notN;
+//        }
+
+        public byte[] getBases() {
+            return bases;
+        }
+    }
 }
 
 /**
