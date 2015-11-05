@@ -203,13 +203,11 @@ public class CollectWgsMetrics extends CommandLineProgram {
         });
 
 
-
         // Loop through all the loci
         while (iterator.hasNext()) {
 
             final SamLocusIterator.LocusInfo info = iterator.next();
 
-            // Check that the reference is not N
             final ReferenceSequence ref = refWalker.get(info.getSequenceIndex());
             final byte[] bases = ref.getBases();
 //            final byte base = ref.getBases()[info.getPosition() - 1];
@@ -220,6 +218,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
 
             final byte base = bases[info.getPosition() - 1];
 
+            // Check that the reference is not N
             if (base == 'N') continue;
 
             // Record progress and perhaps stop
@@ -328,6 +327,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
                     _readNames.put(readName, setForName);
                 }
                 for (int i = begin; i < end; i++) {
+                    // Check that the reference is not N
                     if (bases[i - begin + position - 1] == 'N') continue;
                     int index = _loopArray.shiftPointer(i - recs.getOffset() + position);
                     final byte quality = qualities[i];
@@ -421,6 +421,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
                     cwgs.calculateRead(recs, info.getPosition(), bases);
                 }
 //                if (!infoAndRefBases.isNotN()) continue;
+                if (bases[info.getPosition() - 1] == 'N') continue;
 
                 int index = cwgs.getIndex(info.getPosition());
                 basesExcludedByBaseq += cwgs.getCountBasesExcludedByBaseq(index);
@@ -448,7 +449,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
 
     private class InfoAndRefBases {
         private SamLocusIterator.LocusInfo info;
-//        private boolean notN;
+        //        private boolean notN;
         private byte[] bases;
 
         InfoAndRefBases(SamLocusIterator.LocusInfo info, final byte[] bases) {
