@@ -336,7 +336,7 @@ public class CollectHiSeqXPfFailMetrics extends CommandLineProgram {
          * - numNs~0 and numQGtTwo>=12 there were found throughout the tiles and _increased_ in number as the concentration of the library increased
          * Thus it was concluded that these correspond to the POLYCLONAL wells
          * <p/>
-         * - the remaining reads were few in number the classification for them wasn't clear. Thus they are left as UNKNOWN.
+         * - the remaining reads were few in number the classification for them wasn't clearArrays. Thus they are left as UNKNOWN.
          * <p/>
          * We use the length of the read as a parameter and scale the 8 and the 12 accordingly as length/3 and length/2, but in reality this has only
          * been tested on length=24.

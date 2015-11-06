@@ -45,9 +45,9 @@ public class HeterozygosityFilterTest {
     @DataProvider(name = "Hets")
     public Iterator<Object[]> hetsProvider() {
 
-        final VariantContextBuilder vc_builder = new VariantContextBuilder("testCode", "chr1", 1, 1, Arrays.asList(refA, G));
-        final GenotypeBuilder gt_builder = new GenotypeBuilder("test");
-        final List<Object[]> hets = new ArrayList<Object[]>(10);
+        VariantContextBuilder vc_builder = new VariantContextBuilder("testCode", "chr1", 1, 1, Arrays.asList(refA, G));
+        GenotypeBuilder gt_builder = new GenotypeBuilder("test");
+        List<Object[]> hets = new ArrayList<Object[]>(10);
 
         hets.add(new Object[]{vc_builder.genotypes(gt_builder.alleles(Arrays.asList(refA, G)).make()).make(), null, true});
         hets.add(new Object[]{vc_builder.genotypes(gt_builder.alleles(Arrays.asList(refA, G)).make()).make(), "test", true});
@@ -60,18 +60,23 @@ public class HeterozygosityFilterTest {
     }
 
     @Test(dataProvider = "Hets")
-    public void testHetFilter(final VariantContext vc, final String sample, final boolean shouldPass) {
-        final HeterozygosityFilter hf = getFilter(shouldPass, sample);
+    public void testHetFilter(VariantContext vc, String sample, boolean shouldPass) {
+        final HeterozygosityFilter hf;
+        if (sample == null) {
+            hf = new HeterozygosityFilter(shouldPass);
+        } else {
+            hf = new HeterozygosityFilter(shouldPass, sample);
+        }
 
-        Assert.assertTrue(hf.test(vc));
+        Assert.assertTrue(hf.pass(vc));
     }
 
     @DataProvider(name = "badSamplesProvider")
     public Iterator<Object[]> badSamplesProvider() {
 
-        final VariantContextBuilder vc_builder = new VariantContextBuilder("testCode", "chr1", 1, 1, Arrays.asList(refA, G));
-        final GenotypeBuilder gt_builder = new GenotypeBuilder();
-        final List<Object[]> hets = new ArrayList<Object[]>(10);
+        VariantContextBuilder vc_builder = new VariantContextBuilder("testCode", "chr1", 1, 1, Arrays.asList(refA, G));
+        GenotypeBuilder gt_builder = new GenotypeBuilder();
+        List<Object[]> hets = new ArrayList<Object[]>(10);
 
         hets.add(new Object[]{vc_builder.make(), null});
         hets.add(new Object[]{vc_builder.genotypes(Arrays.asList(gt_builder.name("test1").make(), gt_builder.name("test2").make())).make(), "notNull"});
@@ -81,19 +86,24 @@ public class HeterozygosityFilterTest {
     }
 
     @Test(dataProvider = "badSamplesProvider", expectedExceptions = IllegalArgumentException.class)
-    public void testbadSample(final VariantContext vc, final String sample) {
-        final HeterozygosityFilter hf = getFilter(true, sample);
+    public void testbadSample(VariantContext vc, String sample) {
+        final HeterozygosityFilter hf;
+        if (sample == null) {
+            hf = new HeterozygosityFilter(true);
+        } else {
+            hf = new HeterozygosityFilter(true, sample);
+        }
 
         //should fail
-        hf.test(vc);
+        hf.pass(vc);
     }
 
     @DataProvider(name = "variantsProvider")
     public Object[][] variantsProvider() {
 
-        final VariantContextBuilder vc_builder = new VariantContextBuilder("testCode", "chr1", 1, 1, Arrays.asList(refA, G));
-        final GenotypeBuilder gt_builder = new GenotypeBuilder("test");
-        final List<VariantContext> vcs = new ArrayList<VariantContext>(10);
+        VariantContextBuilder vc_builder = new VariantContextBuilder("testCode", "chr1", 1, 1, Arrays.asList(refA, G));
+        GenotypeBuilder gt_builder = new GenotypeBuilder("test");
+        List<VariantContext> vcs = new ArrayList<VariantContext>(10);
 
         //hets:
         vcs.add(vc_builder.genotypes(gt_builder.alleles(Arrays.asList(refA, G)).make()).make());
@@ -107,22 +117,14 @@ public class HeterozygosityFilterTest {
     }
 
     @Test(dataProvider = "variantsProvider")
-    public void testFilteringIterator(final Iterator<VariantContext> vcs, final int[] passingPositions) {
-        final Iterator<VariantContext> filteringIterator = new FilteringIterator(vcs, new HeterozygosityFilter(true, "test"));
+    public void testFilteringIterator(Iterator<VariantContext> vcs, int[] passingPositions) {
+        Iterator<VariantContext> filteringIterator = new FilteringIterator(vcs, new HeterozygosityFilter(true, "test"));
 
         int i = 0;
         while (filteringIterator.hasNext()) {
-            final VariantContext vc = filteringIterator.next();
+            VariantContext vc = filteringIterator.next();
             Assert.assertTrue(i < passingPositions.length);
             Assert.assertEquals(vc.getStart(), passingPositions[i++]);
-        }
-    }
-
-    private HeterozygosityFilter getFilter(final boolean shouldPass, String sample) {
-        if (sample == null) {
-            return new HeterozygosityFilter(shouldPass);
-        } else {
-            return new HeterozygosityFilter(shouldPass, sample);
         }
     }
 }

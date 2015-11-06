@@ -7,17 +7,10 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" exported="" name="testng-5.5-jdk15" level="project" />
-    <orderEntry type="module" module-name="htsjdk" exported="" />
-    <orderEntry type="library" exported="" name="guava-15.0" level="project" />
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../lib/guava-15.0.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
+    <orderEntry type="library" name="testng-5.5-jdk15" level="project" />
+    <orderEntry type="library" name="dist" level="project" />
+    <orderEntry type="library" name="picard" level="project" />
+    <orderEntry type="library" name="htsjdk_lib_dir" level="project" />
+    <orderEntry type="module" module-name="htsjdk" />
   </component>
 </module>

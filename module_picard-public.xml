@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="module_picard-public" default="compile.module.picard-public">
+  <dirname property="module.picard-public.basedir" file="${ant.file.module_picard-public}"/>
+  
+  <property name="module.jdk.home.picard-public" value="${project.jdk.home}"/>
+  <property name="module.jdk.bin.picard-public" value="${project.jdk.bin}"/>
+  <property name="module.jdk.classpath.picard-public" value="${project.jdk.classpath}"/>
+  
+  <property name="compiler.args.picard-public" value="-encoding windows-1252 -source 8 ${compiler.args}"/>
+  
+  <property name="picard-public.output.dir" value="${module.picard-public.basedir}/intellij.classes"/>
+  <property name="picard-public.testoutput.dir" value="${module.picard-public.basedir}/intellij.testclasses"/>
+  
+  <path id="picard-public.module.bootclasspath">
+    <!-- Paths to be included in compilation bootclasspath -->
+  </path>
+  
+  <path id="picard-public.module.production.classpath">
+    <path refid="${module.jdk.classpath.picard-public}"/>
+    <fileset dir="${basedir}/htsjdk/lib">
+      <patternset refid="library.patterns"/>
+    </fileset>
+    <fileset dir="${basedir}/htsjdk/lib/cofoja">
+      <patternset refid="library.patterns"/>
+    </fileset>
+    <fileset dir="${basedir}/htsjdk/lib/testng">
+      <patternset refid="library.patterns"/>
+    </fileset>
+    <path refid="library.guava-15.0.classpath"/>
+  </path>
+  
+  <path id="picard-public.runtime.production.module.classpath">
+    <pathelement location="${picard-public.output.dir}"/>
+    <fileset dir="${basedir}/htsjdk/lib">
+      <patternset refid="library.patterns"/>
+    </fileset>
+    <fileset dir="${basedir}/htsjdk/lib/cofoja">
+      <patternset refid="library.patterns"/>
+    </fileset>
+    <fileset dir="${basedir}/htsjdk/lib/testng">
+      <patternset refid="library.patterns"/>
+    </fileset>
+    <path refid="library.guava-15.0.classpath"/>
+  </path>
+  
+  <path id="picard-public.module.classpath">
+    <path refid="${module.jdk.classpath.picard-public}"/>
+    <pathelement location="${picard-public.output.dir}"/>
+    <fileset dir="${basedir}/htsjdk/lib">
+      <patternset refid="library.patterns"/>
+    </fileset>
+    <fileset dir="${basedir}/htsjdk/lib/cofoja">
+      <patternset refid="library.patterns"/>
+    </fileset>
+    <fileset dir="${basedir}/htsjdk/lib/testng">
+      <patternset refid="library.patterns"/>
+    </fileset>
+    <path refid="library.guava-15.0.classpath"/>
+  </path>
+  
+  <path id="picard-public.runtime.module.classpath">
+    <pathelement location="${picard-public.testoutput.dir}"/>
+    <pathelement location="${picard-public.output.dir}"/>
+    <fileset dir="${basedir}/htsjdk/lib">
+      <patternset refid="library.patterns"/>
+    </fileset>
+    <fileset dir="${basedir}/htsjdk/lib/cofoja">
+      <patternset refid="library.patterns"/>
+    </fileset>
+    <fileset dir="${basedir}/htsjdk/lib/testng">
+      <patternset refid="library.patterns"/>
+    </fileset>
+    <path refid="library.guava-15.0.classpath"/>
+  </path>
+  
+  
+  <patternset id="excluded.from.module.picard-public">
+    <patternset refid="ignored.files"/>
+  </patternset>
+  
+  <patternset id="excluded.from.compilation.picard-public">
+    <patternset refid="excluded.from.module.picard-public"/>
+  </patternset>
+  
+  <path id="picard-public.module.sourcepath">
+    <dirset dir="${module.picard-public.basedir}">
+      <include name="src/java"/>
+      <include name="htsjdk/src/java"/>
+    </dirset>
+  </path>
+  
+  <path id="picard-public.module.test.sourcepath">
+    <dirset dir="${module.picard-public.basedir}">
+      <include name="src/tests/java"/>
+      <include name="htsjdk/src/tests/java"/>
+    </dirset>
+  </path>
+  
+  
+  <target name="compile.module.picard-public" depends="compile.module.picard-public.production,compile.module.picard-public.tests" description="Compile module Picard-public"/>
+  
+  <target name="compile.module.picard-public.production" depends="register.custom.compilers" description="Compile module Picard-public; production classes">
+    <mkdir dir="${picard-public.output.dir}"/>
+    <javac2 destdir="${picard-public.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true" executable="${module.jdk.bin.picard-public}/javac">
+      <compilerarg line="${compiler.args.picard-public}"/>
+      <bootclasspath refid="picard-public.module.bootclasspath"/>
+      <classpath refid="picard-public.module.production.classpath"/>
+      <src refid="picard-public.module.sourcepath"/>
+      <patternset refid="excluded.from.compilation.picard-public"/>
+    </javac2>
+    
+    <copy todir="${picard-public.output.dir}">
+      <fileset dir="${module.picard-public.basedir}/src/java">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+      <fileset dir="${module.picard-public.basedir}/htsjdk/src/java">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="compile.module.picard-public.tests" depends="register.custom.compilers,compile.module.picard-public.production" description="compile module Picard-public; test classes" unless="skip.tests">
+    <mkdir dir="${picard-public.testoutput.dir}"/>
+    <javac2 destdir="${picard-public.testoutput.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true" executable="${module.jdk.bin.picard-public}/javac">
+      <compilerarg line="${compiler.args.picard-public}"/>
+      <bootclasspath refid="picard-public.module.bootclasspath"/>
+      <classpath refid="picard-public.module.classpath"/>
+      <src refid="picard-public.module.test.sourcepath"/>
+      <patternset refid="excluded.from.compilation.picard-public"/>
+    </javac2>
+    
+    <copy todir="${picard-public.testoutput.dir}">
+      <fileset dir="${module.picard-public.basedir}/src/tests/java">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+      <fileset dir="${module.picard-public.basedir}/htsjdk/src/tests/java">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="clean.module.picard-public" description="cleanup module">
+    <delete dir="${picard-public.output.dir}"/>
+    <delete dir="${picard-public.testoutput.dir}"/>
+  </target>
+</project>

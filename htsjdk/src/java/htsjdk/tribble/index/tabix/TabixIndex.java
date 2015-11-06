@@ -96,7 +96,7 @@ public class TabixIndex implements Index {
      * Convenient ctor that opens the file, wraps with with BGZF reader, and closes after reading index.
      */
     public TabixIndex(final File tabixFile) throws IOException {
-        this(new BlockCompressedInputStream(tabixFile), true);
+        this(new BlockCompressedInputStream(tabixFile, false), true);
     }
 
     private TabixIndex(final InputStream inputStream, final boolean closeInputStream) throws IOException {

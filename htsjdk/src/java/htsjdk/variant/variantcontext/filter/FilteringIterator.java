@@ -34,9 +34,7 @@ import java.util.NoSuchElementException;
 /**
  * A filtering iterator for VariantContexts that takes a base iterator and a VariantContextFilter.
  *
- * The iterator returns all the variantcontexts for which the filter's function "test" returns true (and only those)
- *
- * @author Yossi Farjoun
+ * The iterator returns all the variantcontexts for which the filter's function "pass" returns true (and only those)
  */
 public class FilteringIterator implements CloseableIterator<VariantContext>, Iterable<VariantContext>{
     private final Iterator<VariantContext> iterator;
@@ -45,7 +43,7 @@ public class FilteringIterator implements CloseableIterator<VariantContext>, Ite
 
     /**
      * Constructor of an iterator based on the provided iterator and predicate. The resulting
-     * records will be all those VariantContexts from iterator for which filter.test( . ) is true
+     * records will be all those VariantContexts from iterator for which filter.pass( . ) is true
      *
      * @param iterator the backing iterator
      * @param filter   the filter
@@ -108,7 +106,7 @@ public class FilteringIterator implements CloseableIterator<VariantContext>, Ite
         while (iterator.hasNext()) {
             final VariantContext record = iterator.next();
 
-            if (filter.test(record)) {
+            if (filter.pass(record)) {
                 return record;
             }
         }

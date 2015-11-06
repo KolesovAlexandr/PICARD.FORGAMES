@@ -424,7 +424,7 @@ public class CommandLineParserTest {
         };
 
         final FrobnicateOptionsWithNullList fownl = new FrobnicateOptionsWithNullList();
-        fownl.SHMIGGLE_TYPE.add("shmiggle1"); //providing null value should clear this list
+        fownl.SHMIGGLE_TYPE.add("shmiggle1"); //providing null value should clearArrays this list
 
         final CommandLineParser clp = new CommandLineParser(fownl);
         Assert.assertTrue(clp.parseOptions(System.err, args));

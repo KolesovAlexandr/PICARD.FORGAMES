@@ -87,6 +87,9 @@ public abstract class SamReaderFactory {
 
     /** Set this factory's {@link ValidationStringency} to the provided one, then returns itself. */
     abstract public SamReaderFactory validationStringency(final ValidationStringency validationStringency);
+    
+    public abstract SamReaderFactory async(boolean value);
+
 
     private static SamReaderFactoryImpl DEFAULT =
             new SamReaderFactoryImpl(Option.DEFAULTS, defaultValidationStringency, DefaultSAMRecordFactory.getInstance());
@@ -117,6 +120,7 @@ public abstract class SamReaderFactory {
         private SAMRecordFactory samRecordFactory;
         private CustomReaderFactory customReaderFactory;
         private ReferenceSource referenceSource;
+        private boolean async;
 
         private SamReaderFactoryImpl(final EnumSet<Option> enabledOptions, final ValidationStringency validationStringency, final SAMRecordFactory samRecordFactory) {
             this.enabledOptions = EnumSet.copyOf(enabledOptions);
@@ -255,7 +259,7 @@ public abstract class SamReaderFactory {
                             primitiveSamReader = new BAMFileReader(bufferedStream, indexFile, false, validationStringency, this.samRecordFactory);
                         } else {
                             bufferedStream.close();
-                            primitiveSamReader = new BAMFileReader(sourceFile, indexFile, false, validationStringency, this.samRecordFactory);
+                            primitiveSamReader = new BAMFileReader(sourceFile, indexFile, false, validationStringency, this.samRecordFactory, this.async);
                         }
                     } else if (BlockCompressedInputStream.isValidFile(bufferedStream)) {
                         primitiveSamReader = new SAMTextReader(new BlockCompressedInputStream(bufferedStream), validationStringency, this.samRecordFactory);
@@ -294,6 +298,12 @@ public abstract class SamReaderFactory {
 
         public static SamReaderFactory copyOf(final SamReaderFactoryImpl target) {
             return new SamReaderFactoryImpl(target.enabledOptions, target.validationStringency, target.samRecordFactory);
+        }
+
+        @Override
+        public SamReaderFactory async(boolean value) {
+            async = value;
+            return this;
         }
     }
 
@@ -441,4 +451,5 @@ public abstract class SamReaderFactory {
 
         abstract void applyTo(final CRAMFileReader underlyingReader, final SamReader reader);
     }
+
 }

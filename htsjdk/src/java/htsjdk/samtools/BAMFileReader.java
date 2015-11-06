@@ -53,6 +53,7 @@ class BAMFileReader extends SamReader.ReaderImplementation {
 
     // Underlying compressed data stream.
     private final BlockCompressedInputStream mCompressedInputStream;
+    private boolean mCompressedInputStreamOwner = false;
     private SAMFileHeader mFileHeader = null;
 
     // One of these is populated if the file is seekable and an index exists
@@ -120,9 +121,11 @@ class BAMFileReader extends SamReader.ReaderImplementation {
                   final File indexFile,
                   final boolean eagerDecode,
                   final ValidationStringency validationStringency,
-                  final SAMRecordFactory factory)
+                  final SAMRecordFactory factory,
+                  final boolean async)
         throws IOException {
-        this(new BlockCompressedInputStream(file), indexFile!=null ? indexFile : SamFiles.findIndex(file), eagerDecode, file.getAbsolutePath(), validationStringency, factory);
+        this(new BlockCompressedInputStream(file, async), indexFile!=null ? indexFile : SamFiles.findIndex(file), eagerDecode, file.getAbsolutePath(), validationStringency, factory);
+        this.mCompressedInputStreamOwner = true;
         if (mIndexFile != null && mIndexFile.lastModified() < file.lastModified()) {
             System.err.println("WARNING: BAM index file " + mIndexFile.getAbsolutePath() +
                     " is older than BAM " + file.getAbsolutePath());
@@ -138,6 +141,7 @@ class BAMFileReader extends SamReader.ReaderImplementation {
                   final SAMRecordFactory factory)
         throws IOException {
         this(new BlockCompressedInputStream(strm), indexFile, eagerDecode, strm.getSource(), validationStringency, factory);
+        this.mCompressedInputStreamOwner = true;
     }
 
     BAMFileReader(final SeekableStream strm,
@@ -147,6 +151,7 @@ class BAMFileReader extends SamReader.ReaderImplementation {
                   final SAMRecordFactory factory)
         throws IOException {
         this(new BlockCompressedInputStream(strm), indexStream, eagerDecode, strm.getSource(), validationStringency, factory);
+        this.mCompressedInputStreamOwner = true;
     }
 
     private BAMFileReader(final BlockCompressedInputStream compressedInputStream,
@@ -187,7 +192,7 @@ class BAMFileReader extends SamReader.ReaderImplementation {
 
     /** Reads through the header and sequence records to find the virtual file offset of the first record in the BAM file. */
     static long findVirtualOffsetOfFirstRecord(final File bam) throws IOException {
-        final BAMFileReader reader = new BAMFileReader(bam, null, false, ValidationStringency.SILENT, new DefaultSAMRecordFactory());
+        final BAMFileReader reader = new BAMFileReader(bam, null, false, ValidationStringency.SILENT, new DefaultSAMRecordFactory(), false);
         final long offset = reader.mFirstRecordPointer;
         reader.close();
         return offset;
@@ -271,6 +276,16 @@ class BAMFileReader extends SamReader.ReaderImplementation {
         mStream = null;
         mFileHeader = null;
         mIndex = null;
+        if (mCurrentIterator != null) {
+            mCurrentIterator.close();
+        }
+        if(mCompressedInputStreamOwner && mCompressedInputStream != null) {
+            try {
+                mCompressedInputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public SAMFileHeader getFileHeader() {

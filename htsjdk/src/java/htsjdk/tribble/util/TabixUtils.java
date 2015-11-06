@@ -85,7 +85,7 @@ public class TabixUtils {
         if (tabixIndex == null) throw new IllegalArgumentException();
 
         try {
-            final BlockCompressedInputStream is = new BlockCompressedInputStream(tabixIndex);
+            final BlockCompressedInputStream is = new BlockCompressedInputStream(tabixIndex, false);
 
             // read preliminary bytes
             byte[] buf = new byte[32];

@@ -64,7 +64,7 @@ class MultiHitAlignedReadIterator implements CloseableIterator<HitsForInsert> {
     /**
      *
      * @param querynameOrderIterator
-     * @param primaryAlignmentSelectionStrategy Algorithm for selecting primary alignment when it is not clear from
+     * @param primaryAlignmentSelectionStrategy Algorithm for selecting primary alignment when it is not clearArrays from
      *                                          the input what should be primary.
      */
     MultiHitAlignedReadIterator(final CloseableIterator<SAMRecord> querynameOrderIterator,

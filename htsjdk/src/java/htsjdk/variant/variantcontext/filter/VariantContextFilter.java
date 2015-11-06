@@ -29,15 +29,14 @@ import htsjdk.variant.variantcontext.VariantContext;
  *
  * API for filtering VariantContexts
  *
- * @author Yossi Farjoun
- *
  */
 public interface VariantContextFilter {
+
     /**
      * Determines whether a VariantContext matches this filter
      *
      * @param record the VariantContext to evaluate
      * @return true if the VariantContext matches the filter, otherwise false
      */
-    boolean test(VariantContext record);
+    boolean pass(VariantContext record);
 }

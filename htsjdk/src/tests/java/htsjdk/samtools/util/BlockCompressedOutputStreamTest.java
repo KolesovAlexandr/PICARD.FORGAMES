@@ -57,7 +57,7 @@ public class BlockCompressedOutputStreamTest {
         }
         bcos.write(sb.toString().getBytes());
         bcos.close();
-        final BlockCompressedInputStream bcis = new BlockCompressedInputStream(f);
+        final BlockCompressedInputStream bcis = new BlockCompressedInputStream(f, false);
         final BufferedReader reader = new BufferedReader(new InputStreamReader(bcis));
         String line;
         for(int i = 0; (line = reader.readLine()) != null; ++i) {
@@ -79,7 +79,7 @@ public class BlockCompressedOutputStreamTest {
         bcos.write(input);
         bcos.close();
 
-        final BlockCompressedInputStream bcis = new BlockCompressedInputStream(f);
+        final BlockCompressedInputStream bcis = new BlockCompressedInputStream(f, false);
         byte[] output = new byte[INPUT_SIZE];
         int len;
         int i = 0;

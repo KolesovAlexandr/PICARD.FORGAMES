@@ -659,7 +659,7 @@ public class SAMFileReader implements SamReader, SamReader.Indexing {
                     mReader = new BAMFileReader(bufferedStream, indexFile, eagerDecode, validationStringency, this.samRecordFactory);
                 } else {
                     bufferedStream.close();
-                    mReader = new BAMFileReader(file, indexFile, eagerDecode, validationStringency, this.samRecordFactory);
+                    mReader = new BAMFileReader(file, indexFile, eagerDecode, validationStringency, this.samRecordFactory, false);
                 }
             } else if (BlockCompressedInputStream.isValidFile(bufferedStream)) {
                 mIsBinary = false;

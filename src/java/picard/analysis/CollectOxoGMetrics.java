@@ -412,7 +412,7 @@ public class CollectOxoGMetrics extends CommandLineProgram {
             final Counts counts = new Counts();
             final byte altBase = (refBase == 'C') ? (byte) 'A' : (byte) 'T';
 
-            for (final SamLocusIterator.RecordAndOffset rec : info.getRecordAndPositions()) {
+            for (final SamLocusIterator.RecordAndOffsetEvent rec : info.getRecordAndPositions()) {
                 final byte qual;
                 final SAMRecord samrec = rec.getRecord();
 

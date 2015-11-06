@@ -79,7 +79,7 @@ public class BamFileIoUtils {
 
             if (skipHeader) {
                 final long vOffsetOfFirstRecord = SAMUtils.findVirtualOffsetOfFirstRecordInBam(inputFile);
-                final BlockCompressedInputStream blockIn = new BlockCompressedInputStream(inputFile);
+                final BlockCompressedInputStream blockIn = new BlockCompressedInputStream(inputFile, false);
                 blockIn.seek(vOffsetOfFirstRecord);
                 final long remainingInBlock = blockIn.available();
 

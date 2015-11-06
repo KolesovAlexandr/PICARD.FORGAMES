@@ -636,7 +636,7 @@ public class CommandLineParser {
             if (stringValue.equals("null")) {
                 //"null" is a special value that allows the user to override any default
                 //value set for this arg. It can only be used for optional args. When
-                //used for a list arg, it will clear the list.
+                //used for a list arg, it will clearArrays the list.
                 if (optionDefinition.optional) {
                     value = null;
                 } else {
@@ -794,7 +794,7 @@ public class CommandLineParser {
             sb.append(optionDefinition.defaultValue);
             sb.append(". ");
             if (!optionDefinition.defaultValue.equals("null")) {
-                sb.append("This option can be set to 'null' to clear the default value. ");
+                sb.append("This option can be set to 'null' to clearArrays the default value. ");
             }
         } else if (!optionDefinition.isCollection) {
             sb.append("Required. ");
@@ -838,7 +838,7 @@ public class CommandLineParser {
             }
 
             if (!optionDefinition.defaultValue.equals("null")) {
-                sb.append("This option can be set to 'null' to clear the default list. ");
+                sb.append("This option can be set to 'null' to clearArrays the default list. ");
             }
 
         }

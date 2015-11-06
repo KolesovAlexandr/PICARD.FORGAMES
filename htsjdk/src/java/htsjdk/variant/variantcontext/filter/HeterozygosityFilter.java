@@ -33,8 +33,6 @@ import htsjdk.variant.variantcontext.VariantContext;
  * otherwise first genotype will be used.
  *
  * Missing sample, or no genotype will result in an exception being thrown.
- *
- * @author Yossi Farjoun
  */
 public class HeterozygosityFilter implements VariantContextFilter {
 
@@ -69,7 +67,7 @@ public class HeterozygosityFilter implements VariantContextFilter {
      * @param variantContext the record to examine for heterozygosity
      */
     @Override
-    public boolean test(final VariantContext variantContext) {
+    public boolean pass(final VariantContext variantContext) {
         final Genotype gt = (sample == null) ? variantContext.getGenotype(0) : variantContext.getGenotype(sample);
 
         if (gt == null) {
