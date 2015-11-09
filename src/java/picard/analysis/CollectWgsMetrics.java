@@ -204,12 +204,16 @@ public class CollectWgsMetrics extends CommandLineProgram {
 
 
         // Loop through all the loci
+        int prevSqInd = -1;
         while (iterator.hasNext()) {
 
             final SamLocusIterator.LocusInfo info = iterator.next();
 
             final ReferenceSequence ref = refWalker.get(info.getSequenceIndex());
             final byte[] bases = ref.getBases();
+            if (prevSqInd != info.getSequenceIndex()) {
+                prevSqInd = info.getSequenceIndex();
+            }
 //            final byte base = ref.getBases()[info.getPosition() - 1];
 //            if (base == 'N') continue;
 //            final boolean notN = base != 'N';
@@ -420,16 +424,25 @@ public class CollectWgsMetrics extends CommandLineProgram {
                 for (final SamLocusIterator.RecordAndOffsetEvent recs : info.getRecordAndPositions()) {
                     cwgs.calculateRead(recs, info.getPosition(), bases);
                 }
+                if (info.getPosition() == 8000) {
+                    System.out.println();
+                }
 //                if (!infoAndRefBases.isNotN()) continue;
-                if (bases[info.getPosition() - 1] == 'N') continue;
 
                 int index = cwgs.getIndex(info.getPosition());
+                if (bases[info.getPosition() - 1] == 'N') continue;
+
                 basesExcludedByBaseq += cwgs.getCountBasesExcludedByBaseq(index);
                 basesExcludedByOverlap += cwgs.getCountBasesExcludedByOverlap(index);
 
                 int readNamesSize = cwgs.getReadNameSize(index);
                 final int depth = Math.min(readNamesSize, max);
                 if (depth < readNamesSize) basesExcludedByCapping += readNamesSize - max;
+                if (info.getPosition() == 1343769) {
+                    System.out.println();
+                }
+                basesExcludedByBaseq += 0;
+                basesExcludedByOverlap += 0;
                 HistogramArray[depth]++;
             }
         }
