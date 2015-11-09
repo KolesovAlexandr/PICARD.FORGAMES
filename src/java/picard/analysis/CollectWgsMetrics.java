@@ -182,7 +182,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
                 _loopArray = new LoopArray(_length, 1);
             }
 
-            public void calculateRead(SamLocusIterator.RecordAndOffsetEvent recs, int position) {
+            public void calculateRead(SamLocusIterator.RecordAndOffsetEvent recs, int position, byte[] bases) {
 
                 String readName = recs.getRecordAndOffsetObject().getReadname();
                 if (recs.getType() == SamLocusIterator.RecordAndOffsetEvent.Type.BEGIN) {
@@ -198,6 +198,8 @@ public class CollectWgsMetrics extends CommandLineProgram {
 
 
                     for (int i = begin; i < end; i++) {
+                        // Check that the reference is not N
+                        if (bases[i - recs.getOffset() + position - 1] == 'N') continue;
                         int index = _loopArray.shiftPointer(i - recs.getOffset() + position);
                         final byte quality = qualities[i];
                         if (quality < MINIMUM_BASE_QUALITY) {
@@ -278,12 +280,14 @@ public class CollectWgsMetrics extends CommandLineProgram {
 
             // Check that the reference is not N
             final ReferenceSequence ref = refWalker.get(info.getSequenceIndex());
-            final byte base = ref.getBases()[info.getPosition() - 1];
-            if (base == 'N') continue;
+            final byte[] bases = ref.getBases();
+            final byte base = bases[info.getPosition() - 1];
             // Figure out the coverage while not counting overlapping reads twice, and excluding various things
             for (final SamLocusIterator.RecordAndOffsetEvent recs : info.getRecordAndPositions()) {
-                cwgs.calculateRead(recs, info.getPosition());
+                cwgs.calculateRead(recs, info.getPosition(), bases);
             }
+            // Check that the reference is not N
+            if (base == 'N') continue;
 
             int index = cwgs.getIndex(info.getPosition());
             basesExcludedByBaseq += cwgs.getCountBasesExcludedByBaseq(index);
