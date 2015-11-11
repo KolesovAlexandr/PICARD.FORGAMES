@@ -183,6 +183,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
             }
 
             public void calculateRead(SamLocusIterator.RecordAndOffsetEvent recs, int position, byte[] bases) {
+//                System.out.println(position);
 
                 String readName = recs.getRecordAndOffsetObject().getReadname();
                 if (recs.getType() == SamLocusIterator.RecordAndOffsetEvent.Type.BEGIN) {
@@ -198,9 +199,9 @@ public class CollectWgsMetrics extends CommandLineProgram {
 
 
                     for (int i = begin; i < end; i++) {
+                        int index = _loopArray.shiftPointer(i - recs.getOffset() + position);
                         // Check that the reference is not N
                         if (bases[i - recs.getOffset() + position - 1] == 'N') continue;
-                        int index = _loopArray.shiftPointer(i - recs.getOffset() + position);
                         final byte quality = qualities[i];
                         if (quality < MINIMUM_BASE_QUALITY) {
                             _loopArray.incrimentBaseQ(index);
@@ -220,6 +221,10 @@ public class CollectWgsMetrics extends CommandLineProgram {
                     }
                     setForName.add(recObj);
                 } else {
+//                    if (position>999){
+//                        System.out.println();
+//                    }
+//                    _loopArray.shiftPointer(position);
                     HashSet<SamLocusIterator.RecordAndOffset> setForName = _readNames.get(readName);
                     if (setForName.size() == 1) {
                         _readNames.remove(readName);
@@ -269,10 +274,14 @@ public class CollectWgsMetrics extends CommandLineProgram {
         CWGSQualities cwgs = new CWGSQualities(ARRAY_SIZE);
         int prevSequenceIndex = -1;
 
+//        int depthplus = 0;
         // Loop through all the loci
         while (iterator.hasNext()) {
 
             final SamLocusIterator.LocusInfo info = iterator.next();
+//            TODO перенос данной строки фиксит ошибку
+            int index = cwgs.getIndex(info.getPosition());
+
             if (prevSequenceIndex != info.getSequenceIndex()) {
                 cwgs.clearArrays();
                 prevSequenceIndex = info.getSequenceIndex();
@@ -280,8 +289,14 @@ public class CollectWgsMetrics extends CommandLineProgram {
 
             // Check that the reference is not N
             final ReferenceSequence ref = refWalker.get(info.getSequenceIndex());
+//            if (ref.getName().equals("chr3")){
+//                System.out.println();
+//            };
+//            if (ref.getName().equals("chr4")) break;
             final byte[] bases = ref.getBases();
             final byte base = bases[info.getPosition() - 1];
+//            System.out.println(info.getPosition());
+
             // Figure out the coverage while not counting overlapping reads twice, and excluding various things
             for (final SamLocusIterator.RecordAndOffsetEvent recs : info.getRecordAndPositions()) {
                 cwgs.calculateRead(recs, info.getPosition(), bases);
@@ -289,14 +304,19 @@ public class CollectWgsMetrics extends CommandLineProgram {
             // Check that the reference is not N
             if (base == 'N') continue;
 
-            int index = cwgs.getIndex(info.getPosition());
             basesExcludedByBaseq += cwgs.getCountBasesExcludedByBaseq(index);
             basesExcludedByOverlap += cwgs.getCountBasesExcludedByOverlap(index);
 
             int readNamesSize = cwgs.getReadNameSize(index);
             final int depth = Math.min(readNamesSize, max);
+//            depthplus+=depth;
             if (depth < readNamesSize) basesExcludedByCapping += readNamesSize - max;
             HistogramArray[depth]++;
+//            if (ref.getName().equals("chr3"))
+//                if (depth==173)
+//                    System.out.println("Position: "+info.getPosition()+",  basesExcludedByBaseq: " + basesExcludedByBaseq+", " +
+//                    "basesExcludedByOverlap: "+basesExcludedByOverlap+", basesExcludedByCapping: "+basesExcludedByCapping+", depthplus: "+depthplus);
+
 
             // Record progress and perhaps stop
             progress.record(info.getSequenceName(), info.getPosition());
@@ -328,8 +348,8 @@ public class CollectWgsMetrics extends CommandLineProgram {
         final double total = histo.getSum();
         final double totalWithExcludes = total + basesExcludedByDupes + basesExcludedByMapq + basesExcludedByPairing + basesExcludedByBaseq + basesExcludedByOverlap + basesExcludedByCapping;
 
-        System.out.println("total:" + total + " basesExcludedByDupes:" + " basesExcludedByDupes:" + basesExcludedByDupes + " basesExcludedByMapq:" + basesExcludedByMapq);
-        System.out.println("basesExcludedByPairing:" + basesExcludedByPairing + " basesExcludedByBaseq:" + basesExcludedByBaseq + " basesExcludedByOverlap:" + basesExcludedByOverlap + " basesExcludedByCapping:" + basesExcludedByCapping);
+//        System.out.println("total:" + total + " basesExcludedByDupes:" + " basesExcludedByDupes:" + basesExcludedByDupes + " basesExcludedByMapq:" + basesExcludedByMapq);
+//        System.out.println("basesExcludedByPairing:" + basesExcludedByPairing + " basesExcludedByBaseq:" + basesExcludedByBaseq + " basesExcludedByOverlap:" + basesExcludedByOverlap + " basesExcludedByCapping:" + basesExcludedByCapping);
         metrics.PCT_EXC_DUPE = basesExcludedByDupes / totalWithExcludes;
         metrics.PCT_EXC_MAPQ = basesExcludedByMapq / totalWithExcludes;
         metrics.PCT_EXC_UNPAIRED = basesExcludedByPairing / totalWithExcludes;
