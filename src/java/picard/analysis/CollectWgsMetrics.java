@@ -181,6 +181,9 @@ public class CollectWgsMetrics extends CommandLineProgram {
                 _length = arraySize;
                 _loopArray = new LoopArray(_length, 1);
             }
+            public  void shiftPointer(){
+                _loopArray.shiftPointer();
+            }
 
             public void calculateRead(SamLocusIterator.RecordAndOffsetEvent recs, int position, byte[] bases) {
 //                System.out.println(position);
@@ -199,9 +202,12 @@ public class CollectWgsMetrics extends CommandLineProgram {
 
 
                     for (int i = begin; i < end; i++) {
-                        int index = _loopArray.shiftPointer(i - recs.getOffset() + position);
                         // Check that the reference is not N
-                        if (bases[i - recs.getOffset() + position - 1] == 'N') continue;
+                        if (bases[i - recs.getOffset() + position - 1] == 'N') {
+                            _loopArray.shiftPointer();
+                            continue;
+                        }
+                        int index = _loopArray.shiftPointer(i - recs.getOffset() + position);
                         final byte quality = qualities[i];
                         if (quality < MINIMUM_BASE_QUALITY) {
                             _loopArray.incrimentBaseQ(index);
@@ -276,24 +282,25 @@ public class CollectWgsMetrics extends CommandLineProgram {
 
 //        int depthplus = 0;
         // Loop through all the loci
+        ReferenceSequence ref = null;
+        byte[] bases = null;
         while (iterator.hasNext()) {
 
             final SamLocusIterator.LocusInfo info = iterator.next();
-//            TODO перенос данной строки фиксит ошибку
-            int index = cwgs.getIndex(info.getPosition());
+
 
             if (prevSequenceIndex != info.getSequenceIndex()) {
                 cwgs.clearArrays();
+                ref = refWalker.get(info.getSequenceIndex());
                 prevSequenceIndex = info.getSequenceIndex();
+                bases = ref.getBases();
             }
 
             // Check that the reference is not N
-            final ReferenceSequence ref = refWalker.get(info.getSequenceIndex());
 //            if (ref.getName().equals("chr3")){
 //                System.out.println();
 //            };
 //            if (ref.getName().equals("chr4")) break;
-            final byte[] bases = ref.getBases();
             final byte base = bases[info.getPosition() - 1];
 //            System.out.println(info.getPosition());
 
@@ -301,8 +308,13 @@ public class CollectWgsMetrics extends CommandLineProgram {
             for (final SamLocusIterator.RecordAndOffsetEvent recs : info.getRecordAndPositions()) {
                 cwgs.calculateRead(recs, info.getPosition(), bases);
             }
+//            TODO перенос данной строки фиксит ошибку
             // Check that the reference is not N
-            if (base == 'N') continue;
+            if (base == 'N') {
+                cwgs.shiftPointer();
+                continue;
+            }
+            int index = cwgs.getIndex(info.getPosition());
 
             basesExcludedByBaseq += cwgs.getCountBasesExcludedByBaseq(index);
             basesExcludedByOverlap += cwgs.getCountBasesExcludedByOverlap(index);

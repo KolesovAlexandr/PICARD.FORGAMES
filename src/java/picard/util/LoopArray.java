@@ -40,15 +40,21 @@ public class LoopArray {
 //
 //        }
         if (_pointer == index) {
-            _arrayBaseq[_pointer] = _arrayOverlap[_pointer] = 0;
-            _readNameSize[_pointer] = 0;
-            if (++_pointer == _length) {
-                _pointer = 0;
-            }
+            shiftPointer();
         }
         return index;
     }
-//
+
+    public void shiftPointer() {
+        _arrayBaseq[_pointer] = 0;
+        _arrayOverlap[_pointer] = 0;
+        _readNameSize[_pointer] = 0;
+        if (++_pointer == _length) {
+            _pointer = 0;
+        }
+    }
+
+    //
     public void incrimentOverlap(int i) {
         _arrayOverlap[i]++;
     }
