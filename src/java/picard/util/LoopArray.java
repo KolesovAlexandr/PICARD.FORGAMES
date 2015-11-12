@@ -25,6 +25,20 @@ public class LoopArray {
 
     public int shiftPointer(int i) {
         int index = i % _length;
+//        if (i > 999) if (index > _pointer) {
+//            System.out.println();
+//        }
+//        if (_pointer < index) {
+//            for (int j = _pointer; j <= index; j++) {
+//                _arrayBaseq[j] = _arrayOverlap[j] = 0;
+//                _readNameSize[j] = 0;
+//            }
+//            if (index + 1 > _length) {
+//                _pointer = 0;
+//            } else _pointer = index;
+//            return index;
+//
+//        }
         if (_pointer == index) {
             _arrayBaseq[_pointer] = _arrayOverlap[_pointer] = 0;
             _readNameSize[_pointer] = 0;
