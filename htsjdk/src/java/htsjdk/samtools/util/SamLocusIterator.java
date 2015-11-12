@@ -59,7 +59,11 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
      */
     public static class RecordAndOffset {
         private final SAMRecord record;
+        private final int length;
         private final int offset;
+        private final int refPos;
+        private final String readname;
+        private final byte[] baseQualities;
 
         public int getLength() {
             return length;
@@ -77,10 +81,6 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
             return baseQualities;
         }
 
-        private final int length;
-        private final int refPos;
-        private final String readname;
-        private final byte[] baseQualities;
 
         public RecordAndOffset(final SAMRecord record, final int offset, final int length, final int refPos) {
             this.offset = offset;
@@ -105,9 +105,9 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
         public byte getBaseQuality() { return record.getBaseQualities()[offset]; }
 
         public int getRelativeOffset(int position) {
-            if (position - refPos + offset > 149) {
-                System.out.println();
-            }
+//            if (position - refPos + offset > 149) {
+//                System.out.println();
+//            }
             return position - refPos + offset;
 //            return position - refPos;
         }
