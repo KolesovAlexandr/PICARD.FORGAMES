@@ -459,6 +459,7 @@ public class SamLocusIterator implements Iterable<SamLocusIterator.LocusInfo>, C
         }
     }
 
+
     /**
      * Create the next relevant zero-coverage LocusInfo
      *
