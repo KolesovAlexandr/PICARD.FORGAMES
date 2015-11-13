@@ -42,7 +42,7 @@ import java.util.List;
 )
 public class CollectWgsMetrics extends CommandLineProgram {
 
-    private static final int ARRAY_SIZE = 1000;
+    private static final int ARRAY_SIZE = 100000;
     @Option(shortName = StandardOptionDefinitions.INPUT_SHORT_NAME, doc = "Input SAM or BAM file.")
     public File INPUT;
 
@@ -181,8 +181,8 @@ public class CollectWgsMetrics extends CommandLineProgram {
                 _length = arraySize;
                 _loopArray = new LoopArray(_length, 1);
             }
-            public  void shiftPointer(){
-                _loopArray.shiftPointer();
+            public void shiftIfFindN(){
+                _loopArray.shiftIfFindN();
             }
 
             public void calculateRead(SamLocusIterator.RecordAndOffsetEvent recs, int position, byte[] bases) {
@@ -204,22 +204,22 @@ public class CollectWgsMetrics extends CommandLineProgram {
                     for (int i = begin; i < end; i++) {
                         // Check that the reference is not N
                         if (bases[i - recs.getOffset() + position - 1] == 'N') {
-                            _loopArray.shiftPointer();
+                            //_loopArray.shiftIfFindN();
                             continue;
                         }
-                        int index = _loopArray.shiftPointer(i - recs.getOffset() + position);
+                        //int index = _loopArray.shiftIfFindN(i - recs.getOffset() + position);
                         final byte quality = qualities[i];
                         if (quality < MINIMUM_BASE_QUALITY) {
-                            _loopArray.incrimentBaseQ(index);
+                            _loopArray.incrimentBaseQ(i - recs.getOffset(), position);
                         } else {
                             int bsq = excludeByQuality(setForName, position + i - begin, recObj);
 
                             if (setForName.size() - bsq > 0) {
-                                _loopArray.incrimentOverlap(index);
+                                _loopArray.incrimentOverlap(i - recs.getOffset(), position);
 
                             } else {
-                                _loopArray.incrimentreadNameSize(index);
-                                if (_loopArray.getReadNameSize(index) <= max) {
+                                _loopArray.incrimentreadNameSize(i - recs.getOffset(), position);
+                                if (_loopArray.getReadNameSize(i - recs.getOffset() + position) <= max) {
                                     baseQHistogramArray[quality]++;
                                 }
                             }
@@ -230,7 +230,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
 //                    if (position>999){
 //                        System.out.println();
 //                    }
-//                    _loopArray.shiftPointer(position);
+//                    _loopArray.shiftIfFindN(position);
                     HashSet<SamLocusIterator.RecordAndOffset> setForName = _readNames.get(readName);
                     if (setForName.size() == 1) {
                         _readNames.remove(readName);
@@ -305,21 +305,28 @@ public class CollectWgsMetrics extends CommandLineProgram {
 //            System.out.println(info.getPosition());
 
             // Figure out the coverage while not counting overlapping reads twice, and excluding various things
+            if (info.getPosition() == 10999 && info.getSequenceName().equals("chr1")){
+                System.out.println();
+            }
             for (final SamLocusIterator.RecordAndOffsetEvent recs : info.getRecordAndPositions()) {
                 cwgs.calculateRead(recs, info.getPosition(), bases);
             }
 //            TODO перенос данной строки фиксит ошибку
             // Check that the reference is not N
             if (base == 'N') {
-                cwgs.shiftPointer();
+                cwgs.shiftIfFindN();
                 continue;
             }
-            int index = cwgs.getIndex(info.getPosition());
+            //int index = cwgs.getIndex(info.getPosition());
 
-            basesExcludedByBaseq += cwgs.getCountBasesExcludedByBaseq(index);
-            basesExcludedByOverlap += cwgs.getCountBasesExcludedByOverlap(index);
+            if (info.getPosition() == 10999 && info.getSequenceName().equals("chr1")){
+                System.out.println();
+            }
 
-            int readNamesSize = cwgs.getReadNameSize(index);
+            basesExcludedByBaseq += cwgs.getCountBasesExcludedByBaseq(info.getPosition());
+            basesExcludedByOverlap += cwgs.getCountBasesExcludedByOverlap(info.getPosition());
+
+            int readNamesSize = cwgs.getReadNameSize(info.getPosition());
             final int depth = Math.min(readNamesSize, max);
 //            depthplus+=depth;
             if (depth < readNamesSize) basesExcludedByCapping += readNamesSize - max;

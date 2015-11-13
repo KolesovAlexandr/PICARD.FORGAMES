@@ -1,9 +1,13 @@
 package picard.util;
 
+import java.util.Arrays;
+
 /**
  * Created by alexandr on 10.10.15.
  */
 public class LoopArray {
+    private int q = 0;
+
     private final int _length;
 
     private int[] _arrayBaseq;
@@ -19,12 +23,18 @@ public class LoopArray {
         _readNameSize = new int[_length];
     }
 
-    public void incrimentBaseQ(int i) {
-        _arrayBaseq[i]++;
+    public void incrimentBaseQ(int pos, int locusPos) {
+
+        if (locusPos + pos - q >= _length){
+            changeArray(locusPos);
+        }
+
+        _arrayBaseq[pos + locusPos - q]++;
     }
 
     public int shiftPointer(int i) {
         int index = i % _length;
+
 //        if (i > 999) if (index > _pointer) {
 //            System.out.println();
 //        }
@@ -54,27 +64,57 @@ public class LoopArray {
         }
     }
 
+    public void shiftIfFindN(){
+        ++q;
+    }
+
     //
-    public void incrimentOverlap(int i) {
-        _arrayOverlap[i]++;
+    public void incrimentOverlap(int pos, int locusPos) {
+
+        if (locusPos + pos - q >= _length){
+            changeArray(locusPos);
+        }
+
+        _arrayOverlap[pos + locusPos - q]++;
+    }
+
+    private void changeArray(int locusPos) {
+
+        System.arraycopy(_arrayOverlap, locusPos - q, _arrayOverlap, 0, _length - locusPos + q);
+        System.arraycopy(_arrayBaseq, locusPos - q, _arrayBaseq, 0, _length - locusPos + q);
+        System.arraycopy(_readNameSize, locusPos - q, _readNameSize, 0, _length - locusPos + q);
+
+        Arrays.fill(_arrayOverlap, _length - locusPos + q, _length, 0);
+        Arrays.fill(_arrayBaseq, _length - locusPos + q, _length, 0);
+        Arrays.fill(_readNameSize, _length - locusPos + q, _length, 0);
+
+        q = locusPos;
     }
 
 
     public int getBaseQ(int i) {
-        return _arrayBaseq[i];
+        if (i - q == 100000){
+            System.out.println();
+        }
+        return _arrayBaseq[i - q];
     }
 
     public int getOverlap(int i) {
-        return _arrayOverlap[i];
+        return _arrayOverlap[i - q];
     }
 
     public int getReadNameSize(int i) {
-        return _readNameSize[i];
+        return _readNameSize[i - q];
     }
 
 
-    public void incrimentreadNameSize(final int i) {
-        _readNameSize[i]++;
+    public void incrimentreadNameSize(int pos, int locusPos) {
+
+        if (locusPos + pos - q >= _length){
+            changeArray(locusPos);
+        }
+
+        _readNameSize[pos + locusPos - q]++;
     }
 
     public void clear() {
@@ -82,6 +122,7 @@ public class LoopArray {
         _readNameSize = new int[_length];
         _arrayOverlap = new int[_length];
         _pointer = 0;
+        q = 0;
     }
 
 }
