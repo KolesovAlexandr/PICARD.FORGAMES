@@ -181,7 +181,8 @@ public class CollectWgsMetrics extends CommandLineProgram {
                 _length = arraySize;
                 _loopArray = new LoopArray(_length, 1);
             }
-            public  void shiftPointer(){
+
+            public void shiftPointer() {
                 _loopArray.shiftPointer();
             }
 
@@ -204,7 +205,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
                     for (int i = begin; i < end; i++) {
                         // Check that the reference is not N
                         if (bases[i - recs.getOffset() + position - 1] == 'N') {
-                            _loopArray.shiftPointer();
+//                            _loopArray.shiftPointer();
                             continue;
                         }
                         int index = _loopArray.shiftPointer(i - recs.getOffset() + position);
@@ -292,8 +293,8 @@ public class CollectWgsMetrics extends CommandLineProgram {
             if (prevSequenceIndex != info.getSequenceIndex()) {
                 cwgs.clearArrays();
                 ref = refWalker.get(info.getSequenceIndex());
-                prevSequenceIndex = info.getSequenceIndex();
                 bases = ref.getBases();
+                prevSequenceIndex = info.getSequenceIndex();
             }
 
             // Check that the reference is not N
