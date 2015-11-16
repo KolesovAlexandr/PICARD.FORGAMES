@@ -7,12 +7,14 @@ public class LoopArray {
     private final int _length;
 
     private int[] _arrayBaseq;
-    private int _pointer;
+    private int _wPointer;
+    private int _rPointer;
     private int[] _arrayOverlap;
     private int[] _readNameSize;
 
     public LoopArray(final int length, int pointer) {
-        _pointer = pointer;
+        _wPointer = pointer;
+        _rPointer = pointer;
         _length = length;
         _arrayBaseq = new int[_length];
         _arrayOverlap = new int[_length];
@@ -20,6 +22,7 @@ public class LoopArray {
     }
 
     public void incrimentBaseQ(int i) {
+        shiftWPointer(_arrayBaseq, i);
         _arrayBaseq[i]++;
     }
 
@@ -39,24 +42,49 @@ public class LoopArray {
 //            return index;
 //
 //        }
-        if (_pointer == index) {
-            shiftPointer();
-        }
+
+//
+//        if (_wPointer == index) {
+//            shiftPointer();
+//        }
         return index;
     }
 
-    public void shiftPointer() {
-        _arrayBaseq[_pointer] = 0;
-        _arrayOverlap[_pointer] = 0;
-        _readNameSize[_pointer] = 0;
-        if (++_pointer == _length) {
-            _pointer = 0;
-        }
-    }
+//    public void shiftPointer() {
+//        _arrayBaseq[_wPointer] = 0;
+//        _arrayOverlap[_wPointer] = 0;
+//        _readNameSize[_wPointer] = 0;
+//        if (++_wPointer == _length) {
+//            _wPointer = 0;
+//        }
+//    }
 
     //
     public void incrimentOverlap(int i) {
+
+        shiftWPointer(_arrayOverlap, i);
         _arrayOverlap[i]++;
+    }
+
+    private void shiftWPointer(final int[] array, final int i) {
+        if (_rPointer < _wPointer) {
+            if ((i >= 0 && i < _rPointer) || (i >= _wPointer && i < _length)) {
+                array[i] = 0;
+                _wPointer = i;
+            }
+
+        } else if (_rPointer > _wPointer) {
+            if (i > _wPointer && i < _rPointer) {
+                array[i] = 0;
+                _wPointer = i;
+            }
+
+        } else {
+            if (i==_wPointer){
+                array[i] = 0;
+            }
+            _wPointer = i;
+        }
     }
 
 
@@ -74,6 +102,7 @@ public class LoopArray {
 
 
     public void incrimentreadNameSize(final int i) {
+        shiftWPointer(_readNameSize, i);
         _readNameSize[i]++;
     }
 
@@ -81,7 +110,10 @@ public class LoopArray {
         _arrayBaseq = new int[_length];
         _readNameSize = new int[_length];
         _arrayOverlap = new int[_length];
-        _pointer = 0;
+        _wPointer = 1;
     }
 
+    public void shiftRPointer(final int position) {
+        _rPointer = position;
+    }
 }
