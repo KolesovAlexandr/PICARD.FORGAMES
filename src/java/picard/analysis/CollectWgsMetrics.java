@@ -200,7 +200,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
                     for (int i = begin; i < end; i++) {
                         // Check that the reference is not N
                         if (bases[i - recs.getOffset() + position - 1] == 'N') continue;
-                        int index = _loopArray.shiftPointer(i - recs.getOffset() + position);
+                        int index = _loopArray.getIndex(i - recs.getOffset() + position);
                         final byte quality = qualities[i];
                         if (quality < MINIMUM_BASE_QUALITY) {
                             _loopArray.incrimentBaseQ(index);
@@ -256,12 +256,16 @@ public class CollectWgsMetrics extends CommandLineProgram {
             }
 
             public int getIndex(int i) {
-                return _loopArray.shiftPointer(i);
+                return _loopArray.getIndex(i);
             }
 
             public void clearArrays() {
                 _readNames.clear();
                 _loopArray.clear();
+            }
+
+            public void shiftPointer() {
+                _loopArray.shiftPointer();
             }
         }
 
@@ -287,7 +291,10 @@ public class CollectWgsMetrics extends CommandLineProgram {
                 cwgs.calculateRead(recs, info.getPosition(), bases);
             }
             // Check that the reference is not N
-            if (base == 'N') continue;
+            if (base == 'N') {
+                cwgs.shiftPointer();
+                continue;
+            }
 
             int index = cwgs.getIndex(info.getPosition());
             basesExcludedByBaseq += cwgs.getCountBasesExcludedByBaseq(index);

@@ -23,16 +23,20 @@ public class LoopArray {
         _arrayBaseq[i]++;
     }
 
-    public int shiftPointer(int i) {
+    public int getIndex(int i) {
         int index = i % _length;
         if (_pointer == index) {
+            shiftPointer();
+        }
+        return index;
+    }
+
+    public void shiftPointer() {
             _arrayBaseq[_pointer] = _arrayOverlap[_pointer] = 0;
             _readNameSize[_pointer] = 0;
             if (++_pointer == _length) {
                 _pointer = 0;
             }
-        }
-        return index;
     }
 
     public void incrimentOverlap(int i) {
