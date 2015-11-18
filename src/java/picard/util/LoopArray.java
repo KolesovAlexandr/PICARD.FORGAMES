@@ -11,6 +11,8 @@ public class LoopArray {
     private int _rPointer;
     private int[] _arrayOverlap;
     private int[] _readNameSize;
+    private int shift = 0;
+
 
     public LoopArray(final int length, int pointer) {
         _wPointer = pointer;
@@ -22,12 +24,29 @@ public class LoopArray {
     }
 
     public void incrimentBaseQ(int i) {
-        shiftWPointer(_arrayBaseq, i);
+        shiftWPointer(i);
         _arrayBaseq[i]++;
     }
 
-    public int shiftPointer(int i) {
-        int index = i % _length;
+    public int getIndex(int i) {
+//        int index = i % _length;
+        int index;
+        if (i - shift >= _length) {
+
+            shift = (i / _length) * _length;
+        }
+
+        index = i - shift;
+
+        if (index < 0) {
+            index += _length;
+        }
+
+//        if (index == -4999){
+//            System.out.println();
+//        }
+
+
 //        if (i > 999) if (index > _pointer) {
 //            System.out.println();
 //        }
@@ -45,12 +64,14 @@ public class LoopArray {
 
 //
 //        if (_wPointer == index) {
-//            shiftPointer();
+//            getIndex();
+
 //        }
+
         return index;
     }
 
-//    public void shiftPointer() {
+//    public void getIndex() {
 //        _arrayBaseq[_wPointer] = 0;
 //        _arrayOverlap[_wPointer] = 0;
 //        _readNameSize[_wPointer] = 0;
@@ -62,29 +83,53 @@ public class LoopArray {
     //
     public void incrimentOverlap(int i) {
 
-        shiftWPointer(_arrayOverlap, i);
+        shiftWPointer(i);
         _arrayOverlap[i]++;
     }
 
-    private void shiftWPointer(final int[] array, final int i) {
-        if (_rPointer < _wPointer) {
-            if ((i >= 0 && i < _rPointer) || (i >= _wPointer && i < _length)) {
-                array[i] = 0;
-                _wPointer = i;
-            }
+    private void shiftWPointer(final int i) {
 
+        if (_rPointer < _wPointer) {
+            if ((i >= 0 && i < _rPointer) || (i > _wPointer && i < _length)) {
+                resetAndShift(i);
+            }
         } else if (_rPointer > _wPointer) {
             if (i > _wPointer && i < _rPointer) {
-                array[i] = 0;
+                resetAndShift(i);
+
+            }
+        } else {
+            if (i > _rPointer) {
                 _wPointer = i;
             }
 
-        } else {
-            if (i==_wPointer){
-                array[i] = 0;
-            }
-            _wPointer = i;
         }
+//        if (_rPointer < _wPointer) {
+//            if ((i >= 0 && i < _rPointer) || (i >= _wPointer && i < _length)) {
+//                array[i] = 0;
+//                _wPointer = i;
+//            }
+//
+//        } else if (_rPointer > _wPointer) {
+//            if (i > _wPointer && i < _rPointer) {
+//                array[i] = 0;
+//                _wPointer = i;
+//            }
+//
+//        } else {
+//            if (i==_wPointer){
+//                array[i] = 0;
+//            }
+//            _wPointer = i;
+//        }
+
+    }
+
+    private void resetAndShift(final int i) {
+        _arrayBaseq[i] = 0;
+        _arrayOverlap[i] = 0;
+        _readNameSize[i] = 0;
+        _wPointer = i;
     }
 
 
@@ -102,8 +147,9 @@ public class LoopArray {
 
 
     public void incrimentreadNameSize(final int i) {
-        shiftWPointer(_readNameSize, i);
+        shiftWPointer(i);
         _readNameSize[i]++;
+
     }
 
     public void clear() {
@@ -111,9 +157,23 @@ public class LoopArray {
         _readNameSize = new int[_length];
         _arrayOverlap = new int[_length];
         _wPointer = 1;
+        _rPointer = 1;
+        shift = 0;
     }
 
-    public void shiftRPointer(final int position) {
+    public void shiftPointers(final int position) {
+//        TODO при большом перескоке не сдвигается
+        resetCounters();
+
+        if (_rPointer == _wPointer) {
+            _wPointer = position;
+        }
         _rPointer = position;
+    }
+
+    public void resetCounters() {
+        _arrayBaseq[_rPointer] = 0;
+        _arrayOverlap[_rPointer] = 0;
+        _readNameSize[_rPointer] = 0;
     }
 }
