@@ -23,13 +23,13 @@ public class LoopArray {
         _readNameSize = new int[_length];
     }
 
-    public void incrimentBaseQ(int pos, int locusPos) {
+    public void incrimentBaseQ(int index) {
 
-        if (locusPos + pos - q >= _length){
-            changeArray(locusPos);
+        if (index - q >= _length){
+            changeArray(index);
         }
 
-        _arrayBaseq[pos + locusPos - q]++;
+        _arrayBaseq[index - q]++;
     }
 
     /**
@@ -70,25 +70,26 @@ public class LoopArray {
     //TODO: сделать превентивную перепись массивов: если locusPos + rec.length > _length, то совершить перепись.
     // Т.е переполнение массива не должно произойти впринципе.
 
-    public void shiftIfFindN(){
+    public void shiftIfFindN(int locusPos){
+
         //++q;
         if (q != 0) ++q; //возможное решение: если локус с качеством N найден, но переписи массивов не было,
                          //а значит и q == 0, то и делать компенсацию q++ делать не нужно MODIFICATION V2
     }
 
-    public void checkNOutOfBounds(int pos, int locusPos){
-        if (locusPos + pos - q >= _length){
-            changeArray(locusPos);
+    public void checkNOutOfBounds(int index){
+        if (index - q >= _length){
+            changeArray(index);
         }
     }
 
-    public void incrimentOverlap(int pos, int locusPos) {
+    public void incrimentOverlap(int index) {
 
-        if (locusPos + pos - q >= _length){
-            changeArray(locusPos);
+        if (index - q >= _length){
+            changeArray(index);
         }
 
-        _arrayOverlap[pos + locusPos - q]++;
+        _arrayOverlap[index - q]++;
     }
 
     private void changeArray(int locusPos) {
@@ -127,13 +128,13 @@ public class LoopArray {
     }
 
 
-    public void incrimentreadNameSize(int pos, int locusPos) {
+    public void incrimentreadNameSize(int index) {
 
-        if (locusPos + pos - q >= _length){
-            changeArray(locusPos);
+        if (index - q >= _length){
+            changeArray(index);
         }
 
-        _readNameSize[pos + locusPos - q]++;
+        _readNameSize[index - q]++;
     }
 
     public void clear() {

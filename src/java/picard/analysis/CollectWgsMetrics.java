@@ -181,10 +181,10 @@ public class CollectWgsMetrics extends CommandLineProgram {
                 _length = arraySize;
                 _loopArray = new LoopArray(_length, 1);
             }
-            public void shiftIfFindN(){
-                _loopArray.shiftIfFindN();
+            public void shiftIfFindN(int locusPos){
+                _loopArray.shiftIfFindN(locusPos);
             }
-            public void checkIfOutOfBounds(int recOffset, int locPos){ _loopArray.checkNOutOfBounds(recOffset, locPos);}
+            public void checkIfOutOfBounds(int locPos){ _loopArray.checkNOutOfBounds(locPos);}
 
             public void calculateRead(SamLocusIterator.RecordAndOffsetEvent recs, int position, byte[] bases) {
 //                System.out.println(position);
@@ -204,24 +204,25 @@ public class CollectWgsMetrics extends CommandLineProgram {
 
                     for (int i = begin; i < end; i++) {
                         // Check that the reference is not N
-                        if (bases[i - recs.getOffset() + position - 1] == 'N') {
+                        int index = i - recs.getOffset() + position;
+                        if (bases[index - 1] == 'N') {
                             //_loopArray.shiftIfFindN();
-                            _loopArray.checkNOutOfBounds(i - recs.getOffset(), position);
+                            _loopArray.checkNOutOfBounds(index);
                             continue;
                         }
                         //int index = _loopArray.shiftIfFindN(i - recs.getOffset() + position);
                         final byte quality = qualities[i];
                         if (quality < MINIMUM_BASE_QUALITY) {
-                            _loopArray.incrimentBaseQ(i - recs.getOffset(), position);
+                            _loopArray.incrimentBaseQ(index);
                         } else {
                             int bsq = excludeByQuality(setForName, position + i - begin, recObj);
 
                             if (setForName.size() - bsq > 0) {
-                                _loopArray.incrimentOverlap(i - recs.getOffset(), position);
+                                _loopArray.incrimentOverlap(index);
 
                             } else {
-                                _loopArray.incrimentreadNameSize(i - recs.getOffset(), position);
-                                if (_loopArray.getReadNameSize(i - recs.getOffset() + position) <= max) {
+                                _loopArray.incrimentreadNameSize(index);
+                                if (_loopArray.getReadNameSize(index) <= max) {
                                     baseQHistogramArray[quality]++;
                                 }
                             }
@@ -315,13 +316,13 @@ public class CollectWgsMetrics extends CommandLineProgram {
 
             if (info.getRecordAndPositions().isEmpty()){ //отлавливает локусы, base которых не N, но и ридов они не содержат
                 //cwgs.shiftIfFindN();
-                cwgs.checkIfOutOfBounds(0, info.getPosition());
+                cwgs.checkIfOutOfBounds(info.getPosition());
             }
 
 //            TODO перенос данной строки фиксит ошибку
             // Check that the reference is not N
             if (base == 'N') {
-                cwgs.shiftIfFindN();
+                cwgs.shiftIfFindN(info.getPosition());
                 continue;
             }
             //int index = cwgs.getIndex(info.getPosition());
