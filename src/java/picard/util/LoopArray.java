@@ -32,6 +32,7 @@ public class LoopArray {
         _arrayBaseq[pos + locusPos - q]++;
     }
 
+    /**
     public int shiftPointer(int i) {
         int index = i % _length;
 
@@ -54,7 +55,8 @@ public class LoopArray {
         }
         return index;
     }
-
+     **/
+    /**
     public void shiftPointer() {
         _arrayBaseq[_pointer] = 0;
         _arrayOverlap[_pointer] = 0;
@@ -63,12 +65,23 @@ public class LoopArray {
             _pointer = 0;
         }
     }
+     **/
+
+    //TODO: сделать превентивную перепись массивов: если locusPos + rec.length > _length, то совершить перепись.
+    // Т.е переполнение массива не должно произойти впринципе.
 
     public void shiftIfFindN(){
-        ++q;
+        //++q;
+        if (q != 0) ++q; //возможное решение: если локус с качеством N найден, но переписи массивов не было,
+                         //а значит и q == 0, то и делать компенсацию q++ делать не нужно MODIFICATION V2
     }
 
-    //
+    public void checkNOutOfBounds(int pos, int locusPos){
+        if (locusPos + pos - q >= _length){
+            changeArray(locusPos);
+        }
+    }
+
     public void incrimentOverlap(int pos, int locusPos) {
 
         if (locusPos + pos - q >= _length){
@@ -93,7 +106,13 @@ public class LoopArray {
 
 
     public int getBaseQ(int i) {
-        if (i - q == 100000){
+
+        if (i - q >= 100000){
+            int h = 0;
+        }
+        try {
+            int y = _arrayBaseq[i - q];
+        }catch (IndexOutOfBoundsException e){
             System.out.println();
         }
         return _arrayBaseq[i - q];

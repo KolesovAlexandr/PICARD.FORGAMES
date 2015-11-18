@@ -184,6 +184,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
             public void shiftIfFindN(){
                 _loopArray.shiftIfFindN();
             }
+            public void checkIfOutOfBounds(int recOffset, int locPos){ _loopArray.checkNOutOfBounds(recOffset, locPos);}
 
             public void calculateRead(SamLocusIterator.RecordAndOffsetEvent recs, int position, byte[] bases) {
 //                System.out.println(position);
@@ -205,6 +206,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
                         // Check that the reference is not N
                         if (bases[i - recs.getOffset() + position - 1] == 'N') {
                             //_loopArray.shiftIfFindN();
+                            _loopArray.checkNOutOfBounds(i - recs.getOffset(), position);
                             continue;
                         }
                         //int index = _loopArray.shiftIfFindN(i - recs.getOffset() + position);
@@ -266,9 +268,11 @@ public class CollectWgsMetrics extends CommandLineProgram {
                 return _loopArray.getReadNameSize(position);
             }
 
+            /**
             public int getIndex(int i) {
                 return _loopArray.shiftPointer(i);
             }
+             **/
 
             public void clearArrays() {
                 _readNames.clear();
@@ -305,12 +309,15 @@ public class CollectWgsMetrics extends CommandLineProgram {
 //            System.out.println(info.getPosition());
 
             // Figure out the coverage while not counting overlapping reads twice, and excluding various things
-            if (info.getPosition() == 10999 && info.getSequenceName().equals("chr1")){
-                System.out.println();
-            }
             for (final SamLocusIterator.RecordAndOffsetEvent recs : info.getRecordAndPositions()) {
                 cwgs.calculateRead(recs, info.getPosition(), bases);
             }
+
+            if (info.getRecordAndPositions().isEmpty()){ //отлавливает локусы, base которых не N, но и ридов они не содержат
+                //cwgs.shiftIfFindN();
+                cwgs.checkIfOutOfBounds(0, info.getPosition());
+            }
+
 //            TODO перенос данной строки фиксит ошибку
             // Check that the reference is not N
             if (base == 'N') {
@@ -319,9 +326,6 @@ public class CollectWgsMetrics extends CommandLineProgram {
             }
             //int index = cwgs.getIndex(info.getPosition());
 
-            if (info.getPosition() == 10999 && info.getSequenceName().equals("chr1")){
-                System.out.println();
-            }
 
             basesExcludedByBaseq += cwgs.getCountBasesExcludedByBaseq(info.getPosition());
             basesExcludedByOverlap += cwgs.getCountBasesExcludedByOverlap(info.getPosition());
