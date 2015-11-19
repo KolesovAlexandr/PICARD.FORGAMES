@@ -6,6 +6,8 @@ import java.util.Arrays;
  * Created by alexandr on 10.10.15.
  */
 public class LoopArray {
+
+    public final static int READ_LENGHT = 200;
     private int q = 0;
 
     private final int _length;
@@ -32,40 +34,6 @@ public class LoopArray {
         _arrayBaseq[index - q]++;
     }
 
-    /**
-    public int shiftPointer(int i) {
-        int index = i % _length;
-
-//        if (i > 999) if (index > _pointer) {
-//            System.out.println();
-//        }
-//        if (_pointer < index) {
-//            for (int j = _pointer; j <= index; j++) {
-//                _arrayBaseq[j] = _arrayOverlap[j] = 0;
-//                _readNameSize[j] = 0;
-//            }
-//            if (index + 1 > _length) {
-//                _pointer = 0;
-//            } else _pointer = index;
-//            return index;
-//
-//        }
-        if (_pointer == index) {
-            shiftPointer();
-        }
-        return index;
-    }
-     **/
-    /**
-    public void shiftPointer() {
-        _arrayBaseq[_pointer] = 0;
-        _arrayOverlap[_pointer] = 0;
-        _readNameSize[_pointer] = 0;
-        if (++_pointer == _length) {
-            _pointer = 0;
-        }
-    }
-     **/
 
     //TODO: сделать превентивную перепись массивов: если locusPos + rec.length > _length, то совершить перепись.
     // Т.е переполнение массива не должно произойти впринципе.
@@ -80,6 +48,12 @@ public class LoopArray {
     public void checkNOutOfBounds(int index){
         if (index - q >= _length){
             changeArray(index);
+        }
+    }
+
+    public void checkOutOfBoundsRead(int loc){
+        if (loc - q + READ_LENGHT >= _length){
+            changeArray(loc);
         }
     }
 
@@ -114,7 +88,7 @@ public class LoopArray {
         try {
             int y = _arrayBaseq[i - q];
         }catch (IndexOutOfBoundsException e){
-            System.out.println();
+            System.out.println("ERRORRRR!!!!!!!!!!!!!!!!!");
         }
         return _arrayBaseq[i - q];
     }

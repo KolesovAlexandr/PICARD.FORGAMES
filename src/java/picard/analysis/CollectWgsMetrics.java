@@ -185,6 +185,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
                 _loopArray.shiftIfFindN(locusPos);
             }
             public void checkIfOutOfBounds(int locPos){ _loopArray.checkNOutOfBounds(locPos);}
+            public void checkIfOutOfBoundsRead(int locPos) { _loopArray.checkOutOfBoundsRead(locPos);}
 
             public void calculateRead(SamLocusIterator.RecordAndOffsetEvent recs, int position, byte[] bases) {
 //                System.out.println(position);
@@ -309,6 +310,9 @@ public class CollectWgsMetrics extends CommandLineProgram {
             final byte base = bases[info.getPosition() - 1];
 //            System.out.println(info.getPosition());
 
+
+            cwgs.checkIfOutOfBoundsRead(info.getPosition());
+
             // Figure out the coverage while not counting overlapping reads twice, and excluding various things
             for (final SamLocusIterator.RecordAndOffsetEvent recs : info.getRecordAndPositions()) {
                 cwgs.calculateRead(recs, info.getPosition(), bases);
@@ -322,7 +326,8 @@ public class CollectWgsMetrics extends CommandLineProgram {
 //            TODO перенос данной строки фиксит ошибку
             // Check that the reference is not N
             if (base == 'N') {
-                cwgs.shiftIfFindN(info.getPosition());
+                //cwgs.shiftIfFindN(info.getPosition());
+                cwgs.checkIfOutOfBounds(info.getPosition());
                 continue;
             }
             //int index = cwgs.getIndex(info.getPosition());
