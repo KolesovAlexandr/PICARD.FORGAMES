@@ -179,7 +179,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
 
             public CWGSQualities(int arraySize) {
                 _length = arraySize;
-                _loopArray = new LoopArray(_length, 1);
+                _loopArray = new LoopArray(_length);
             }
             public void shiftIfFindN(int locusPos){
                 _loopArray.shiftIfFindN(locusPos);
@@ -208,7 +208,7 @@ public class CollectWgsMetrics extends CommandLineProgram {
                         int index = i - recs.getOffset() + position;
                         if (bases[index - 1] == 'N') {
                             //_loopArray.shiftIfFindN();
-                            _loopArray.checkNOutOfBounds(index);
+                           // _loopArray.checkNOutOfBounds(index);  //V4
                             continue;
                         }
                         //int index = _loopArray.shiftIfFindN(i - recs.getOffset() + position);
@@ -320,14 +320,14 @@ public class CollectWgsMetrics extends CommandLineProgram {
 
             if (info.getRecordAndPositions().isEmpty()){ //отлавливает локусы, base которых не N, но и ридов они не содержат
                 //cwgs.shiftIfFindN();
-                cwgs.checkIfOutOfBounds(info.getPosition());
+                //cwgs.checkIfOutOfBounds(info.getPosition());    //V3  //V4
             }
 
 //            TODO перенос данной строки фиксит ошибку
             // Check that the reference is not N
             if (base == 'N') {
                 //cwgs.shiftIfFindN(info.getPosition());
-                cwgs.checkIfOutOfBounds(info.getPosition());
+                //cwgs.checkIfOutOfBounds(info.getPosition()); V4
                 continue;
             }
             //int index = cwgs.getIndex(info.getPosition());

@@ -7,116 +7,110 @@ import java.util.Arrays;
  */
 public class LoopArray {
 
-    public final static int READ_LENGHT = 200;
-    private int q = 0;
+    private int READ_LENGHT = 200; //значение по-умолчанию для стандартной длины рида в 150 оснований. 200 берём для верности.
+    private int offset = 0;
 
-    private final int _length;
-
+    private int _commonLength;
     private int[] _arrayBaseq;
-    private int _pointer;
     private int[] _arrayOverlap;
     private int[] _readNameSize;
 
-    public LoopArray(final int length, int pointer) {
-        _pointer = pointer;
-        _length = length;
-        _arrayBaseq = new int[_length];
-        _arrayOverlap = new int[_length];
-        _readNameSize = new int[_length];
+    public LoopArray(final int length){
+        _commonLength = length;
+        _arrayBaseq = new int[_commonLength];
+        _arrayOverlap = new int[_commonLength];
+        _readNameSize = new int[_commonLength];
+    }
+
+    public LoopArray(final int length, int readLength) {
+        this(length);
+        READ_LENGHT = readLength + 50;  //+50 для верности
     }
 
     public void incrimentBaseQ(int index) {
 
-        if (index - q >= _length){
+        /**
+        if (index - offset >= _commonLength){
             changeArray(index);
         }
+         **/
 
-        _arrayBaseq[index - q]++;
+        _arrayBaseq[index - offset]++;
     }
 
 
-    //TODO: сделать превентивную перепись массивов: если locusPos + rec.length > _length, то совершить перепись.
+    //TODO: сделать превентивную перепись массивов: если locusPos + rec.length > _commonLength, то совершить перепись.
     // Т.е переполнение массива не должно произойти впринципе.
 
     public void shiftIfFindN(int locusPos){
 
-        //++q;
-        if (q != 0) ++q; //возможное решение: если локус с качеством N найден, но переписи массивов не было,
-                         //а значит и q == 0, то и делать компенсацию q++ делать не нужно MODIFICATION V2
+        //++offset;
+        if (offset != 0) ++offset; //возможное решение: если локус с качеством N найден, но переписи массивов не было,
+                         //а значит и offset == 0, то и делать компенсацию offset++ делать не нужно MODIFICATION V2
     }
 
     public void checkNOutOfBounds(int index){
-        if (index - q >= _length){
+        if (index - offset >= _commonLength){
             changeArray(index);
         }
     }
 
     public void checkOutOfBoundsRead(int loc){
-        if (loc - q + READ_LENGHT >= _length){
+        if (loc - offset + READ_LENGHT >= _commonLength){
             changeArray(loc);
         }
     }
 
     public void incrimentOverlap(int index) {
-
-        if (index - q >= _length){
+        /**
+        if (index - offset >= _commonLength){
             changeArray(index);
         }
-
-        _arrayOverlap[index - q]++;
+        **/
+        _arrayOverlap[index - offset]++;
     }
 
     private void changeArray(int locusPos) {
 
-        System.arraycopy(_arrayOverlap, locusPos - q, _arrayOverlap, 0, _length - locusPos + q);
-        System.arraycopy(_arrayBaseq, locusPos - q, _arrayBaseq, 0, _length - locusPos + q);
-        System.arraycopy(_readNameSize, locusPos - q, _readNameSize, 0, _length - locusPos + q);
+        System.arraycopy(_arrayOverlap, locusPos - offset, _arrayOverlap, 0, _commonLength - locusPos + offset);
+        System.arraycopy(_arrayBaseq, locusPos - offset, _arrayBaseq, 0, _commonLength - locusPos + offset);
+        System.arraycopy(_readNameSize, locusPos - offset, _readNameSize, 0, _commonLength - locusPos + offset);
 
-        Arrays.fill(_arrayOverlap, _length - locusPos + q, _length, 0);
-        Arrays.fill(_arrayBaseq, _length - locusPos + q, _length, 0);
-        Arrays.fill(_readNameSize, _length - locusPos + q, _length, 0);
+        Arrays.fill(_arrayOverlap, _commonLength - locusPos + offset, _commonLength, 0);
+        Arrays.fill(_arrayBaseq, _commonLength - locusPos + offset, _commonLength, 0);
+        Arrays.fill(_readNameSize, _commonLength - locusPos + offset, _commonLength, 0);
 
-        q = locusPos;
+        offset = locusPos;
     }
 
 
     public int getBaseQ(int i) {
-
-        if (i - q >= 100000){
-            int h = 0;
-        }
-        try {
-            int y = _arrayBaseq[i - q];
-        }catch (IndexOutOfBoundsException e){
-            System.out.println("ERRORRRR!!!!!!!!!!!!!!!!!");
-        }
-        return _arrayBaseq[i - q];
+        return _arrayBaseq[i - offset];
     }
 
     public int getOverlap(int i) {
-        return _arrayOverlap[i - q];
+        return _arrayOverlap[i - offset];
     }
 
     public int getReadNameSize(int i) {
-        return _readNameSize[i - q];
+        return _readNameSize[i - offset];
     }
 
 
     public void incrimentreadNameSize(int index) {
-
-        if (index - q >= _length){
+        /**
+        if (index - offset >= _commonLength){
             changeArray(index);
         }
-
-        _readNameSize[index - q]++;
+        **/
+        _readNameSize[index - offset]++;
     }
 
     public void clear() {
-        _arrayBaseq = new int[_length];
-        _readNameSize = new int[_length];
-        _arrayOverlap = new int[_length];
-        _pointer = 0;
-        q = 0;
+        _arrayBaseq = new int[_commonLength];
+        _readNameSize = new int[_commonLength];
+        _arrayOverlap = new int[_commonLength];
+        offset = 0;
     }
 
 }
