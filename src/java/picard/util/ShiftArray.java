@@ -5,70 +5,43 @@ import java.util.Arrays;
 /**
  * Created by alexandr on 10.10.15.
  */
-public class LoopArray {
+public class ShiftArray {
 
     private int READ_LENGHT = 200; //значение по-умолчанию для стандартной длины рида в 150 оснований. 200 берём для верности.
-    private int offset = 0;
+    private int offset = 0;        //компенсирует позицию локуса относительно внутренних массивов
 
     private int _commonLength;
     private int[] _arrayBaseq;
     private int[] _arrayOverlap;
     private int[] _readNameSize;
 
-    public LoopArray(final int length){
+    public ShiftArray(final int length){
         _commonLength = length;
         _arrayBaseq = new int[_commonLength];
         _arrayOverlap = new int[_commonLength];
         _readNameSize = new int[_commonLength];
     }
 
-    public LoopArray(final int length, int readLength) {
+    public ShiftArray(final int length, int readLength) {
         this(length);
         READ_LENGHT = readLength + 50;  //+50 для верности
     }
 
     public void incrimentBaseQ(int index) {
-
-        /**
-        if (index - offset >= _commonLength){
-            changeArray(index);
-        }
-         **/
-
         _arrayBaseq[index - offset]++;
     }
 
-
-    //TODO: сделать превентивную перепись массивов: если locusPos + rec.length > _commonLength, то совершить перепись.
-    // Т.е переполнение массива не должно произойти впринципе.
-
-    public void shiftIfFindN(int locusPos){
-
-        //++offset;
-        if (offset != 0) ++offset; //возможное решение: если локус с качеством N найден, но переписи массивов не было,
-                         //а значит и offset == 0, то и делать компенсацию offset++ делать не нужно MODIFICATION V2
-    }
-
-    public void checkNOutOfBounds(int index){
-        if (index - offset >= _commonLength){
-            changeArray(index);
-        }
-    }
-
-    public void checkOutOfBoundsRead(int loc){
+    //главная проверка, что текущее положение локуса не выходит за пределы массивов
+    public void checkOutOfBounds(int loc){
         if (loc - offset + READ_LENGHT >= _commonLength){
             changeArray(loc);
         }
     }
 
     public void incrimentOverlap(int index) {
-        /**
-        if (index - offset >= _commonLength){
-            changeArray(index);
-        }
-        **/
         _arrayOverlap[index - offset]++;
     }
+
 
     private void changeArray(int locusPos) {
 
@@ -98,11 +71,6 @@ public class LoopArray {
 
 
     public void incrimentreadNameSize(int index) {
-        /**
-        if (index - offset >= _commonLength){
-            changeArray(index);
-        }
-        **/
         _readNameSize[index - offset]++;
     }
 
